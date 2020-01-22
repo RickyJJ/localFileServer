@@ -1,0 +1,19 @@
+syntax = "proto3";
+option java_outer_classname = "TokenInfo";
+
+package org.jiong.protobuf;
+message Token {
+
+    string value = 1;
+
+    enum TokenType {
+        TEMP = 0;
+        FOREVER = 1;
+    }
+
+    TokenType type = 2;
+
+    int64 last_time = 3;
+
+    bool isValid = 4;
+}

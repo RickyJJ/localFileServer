@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tree Page</title>
+    <style type="text/css">
+        .bg {
+            background-color: #b7ffd9;
+        }
+
+        .title {
+            text-align: center;
+        }
+
+        .mainContainer {
+            padding-bottom: 36px;
+        }
+
+        .fileTree {
+            list-style: none;
+            padding: 0 16px;
+        }
+
+        .fileTree > li {
+            padding: 4px;
+        }
+
+        .fileSize {
+        }
+
+        .timestamp {
+            margin-right: 16px;
+        }
+
+        .fix-bottom {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: 0 auto 16px auto;
+        }
+
+        .btn-upload {
+            outline-style: none;
+            background-color: #89e88b;
+            border-radius: 5rem;
+            width: 75%;
+            height: 36px;
+            border: none;
+            margin: 0 auto;
+            text-align: center;
+            line-height: 36px;
+            position: relative;
+        }
+
+        .btn-upload:active {
+            background-color: #6fb769;
+        }
+
+        .file-hidden {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+<body class="bg">
+<div class="title"><h1>Files Presentation</h1></div>
+<div class="mainContainer">
+    <ul class="fileTree">
+        #if(!isRoot)
+        <li><a href="/files/#(parentPath)">..</a></li>
+        #end
+        #for(file : files)
+        <li>
+            #if (file.isDir())
+            <a href="/files/#(file.path)">#(file.name)&nbsp;-></a>
+            #else
+            <a href="/download/#(file.path)">#(file.name)</a>
+            #end
+            <div style="display: inline-block; float: right">
+                <span class="fileSize">#(file.size)</span>
+                <small class="timestamp">#(file.lastModifiedDate)</small>
+            </div>
+        </li>
+        #end
+    </ul>
+</div>
+<div class="fix-bottom" style="text-align: center">
+    <form action="/fileUpload" method="post" enctype="multipart/form-data">
+        <div>
+            <div class="btn-upload">Click to Upload File(Drag file to here)
+                <input type="file" class="file-hidden" name="file" onchange="submitFile(this.value)">
+            </div>
+        </div>
+    </form>
+</div>
+</body>
+<script type="text/javascript">
+    function submitFile(filePath) {
+        var form = document.forms[0];
+        if (filePath && filePath.length > 0) {
+            if (confirm("Upload This file?")) {
+                form.submit();
+            }
+            form.reset();
+        }
+    }
+
+    function readFile(event) {
+        console.log('file', event);
+    }
+</script>
+</html>

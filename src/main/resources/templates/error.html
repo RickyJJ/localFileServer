@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Error</title>
+    <style type="text/css">
+        .ft-bigger {
+            font-size: 1.5em;
+        }
+        .red {
+            color: #FF0000;
+        }
+
+        .error-msg {
+            font-weight: bold;
+            color: #d1d1d1;
+        }
+    </style>
+</head>
+<body>
+<div style="text-align: center; ">
+    <h1 style="width: 100%; margin-top: 10%"><span class="red ft-bigger">Y</span>ou have an <span class="red">Error</span> to Debug!</h1>
+#if (error_msg != null)
+<small class="error-msg">#(error_msg)</small>
+#end
+</div>
+</body>
+</html>

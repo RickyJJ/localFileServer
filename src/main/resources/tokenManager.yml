@@ -1,0 +1,3 @@
+token:
+  adminIp: '127.0.0.1'
+  tokenPath: 'D:\MySpace\Projects\fileTreeUploader\tokens'

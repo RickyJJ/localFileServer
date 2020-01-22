@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tree Page</title>
+    <style type="text/css">
+        .bg {
+            background-color: #b7ffd9;
+        }
+
+        .title {
+            text-align: center;
+        }
+
+        .mainContainer {
+            padding-bottom: 36px;
+        }
+
+        .fix-bottom {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: 0 auto 16px auto;
+        }
+
+        .btn-upload {
+            outline-style: none;
+            background-color: #89e88b;
+            border-radius: 5rem;
+            width: 75%;
+            height: 36px;
+            border: none;
+            margin: 0 auto;
+            text-align: center;
+            line-height: 36px;
+            position: relative;
+        }
+
+        .btn-upload:active {
+            background-color: #6fb769;
+        }
+
+        .token {
+            margin: 0 auto;
+            width: 60%;
+            height: 16rem;
+            line-height: 16rem;
+            text-align: center;
+            font-weight: bolder;
+            border: 1px solid white;
+            cursor: pointer;
+        }
+
+        .forever {
+            background-color: #89e88b;
+            color: white;
+        }
+
+        .forever:hover {
+            background-color: #6fb769;
+        }
+
+        .temp {
+            background-color: aqua;
+            color: white;
+            margin-top: 4rem;
+        }
+
+        .temp:hover {
+            background-color: #65e2e6;
+        }
+
+    </style>
+</head>
+<body class="bg">
+<div class="title"><h1>Token Creator</h1></div>
+<div class="mainContainer">
+    <div class="token forever" onclick="pickTokenType('1')">
+        <input type="radio" id="id-token-forever" name="tokenType" value="">Forever Token
+    </div>
+    <div class="token temp" onclick="pickTokenType('2')">
+        <input type="radio" id="id-token-temp" name="tokenType" value="">Temporal Token
+    </div>
+</div>
+<div class="fix-bottom" style="text-align: center">
+    <form action="/fileUpload" method="get" enctype="multipart/form-data">
+        <input type="hidden" id="id-tokenType" name="tokenType" value="">
+        <div>
+            <div class="btn-upload" onclick="submitFile()">Click to Create Token</div>
+        </div>
+    </form>
+</div>
+</body>
+<script type="text/javascript">
+    function submitFile() {
+        var tokenType = getDom('id-tokenType').value;
+
+        if (tokenType === '') {
+            alert('请选择一种Token类型');
+            return;
+        }
+
+        fetch("/token/create", {
+            method: 'get',
+            body: {
+                tokenType: tokenType
+            }
+        }).then(response => {
+            const result = response.json();
+            if (result.STATUS === '1') {
+                alert('Your Token is :' + result.newToken);
+            } else {
+                alert(result.msg);
+            }
+        });
+        document.forms[0].submit();
+    }
+
+    function pickTokenType(tokenType) {
+        if (tokenType === '1') {
+            document.getElementById('id-token-forever').checked = true;
+        } else {
+            document.getElementById('id-token-temp').checked = true;
+        }
+        document.getElementById('id-tokenType').value = tokenType;
+    }
+
+    function getDom(id) {
+        return document.getElementById(id);
+    }
+</script>
+</html>

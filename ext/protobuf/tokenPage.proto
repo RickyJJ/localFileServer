@@ -1,0 +1,11 @@
+syntax = 'proto3';
+
+option java_outer_classname = 'TokenPool';
+
+package org.jiong.protobuf;
+
+import 'token.proto';
+
+message TokenPage {
+    repeated Token token = 1;
+}

@@ -1,0 +1,15 @@
+syntax = 'proto3';
+
+option  java_outer_classname = 'UserInfo';
+
+package org.jiong.protobuf;
+
+import  'token.proto';
+
+message User {
+    Token token  = 1;
+
+    string id = 2;
+
+    string name = 3;
+}
