@@ -1,5 +1,6 @@
 package org.jiong.filetree.token;
 
+import org.jiong.filetree.common.util.TokenKit;
 import org.jiong.protobuf.TokenInfo;
 
 import java.time.Instant;
@@ -8,17 +9,16 @@ import java.time.Instant;
  * @author Mr.Jiong
  */
 public class ExpireHandleTokenWrapper extends HandleTokenWrapper implements ExpiredHandleToken {
-    private Instant deadDate;
 
-    public ExpireHandleTokenWrapper(Instant deadDate) {
-        this.deadDate = deadDate;
+    private ExpireHandleTokenWrapper(TokenInfo.Token token, Instant instant) {
+        super(token);
+        this.token.setExpireDate(instant);
     }
 
     @Override
     public boolean isExpired() {
         if (token.getType() == TokenInfo.Token.TokenType.TEMP) {
-            Instant instant = Instant.ofEpochMilli(token.getLastTime());
-            return instant.isAfter(Instant.now());
+            return token.getExpireDate().isAfter(Instant.now());
         }
 
         return false;
@@ -26,18 +26,16 @@ public class ExpireHandleTokenWrapper extends HandleTokenWrapper implements Expi
 
     @Override
     public Instant getExpiredTime() {
-        if (deadDate == null) {
+        if (token.getExpireDate() == null) {
             return null;
         }
-        return Instant.ofEpochMilli(deadDate.toEpochMilli());
+        return token.getExpireDate();
     }
 
-
-    public static ExpiredHandleToken asExpiredHandleToken(TokenInfo.Token token) {
-
-        ExpireHandleTokenWrapper expireHandleTokenWrapper = new ExpireHandleTokenWrapper(null);
-        expireHandleTokenWrapper.setToken(token);
-
+    public static ExpiredHandleToken newInstance(TokenInfo.Token token, long deadTime) {
+        Instant instant = Instant.ofEpochMilli(deadTime);
+        ExpireHandleTokenWrapper expireHandleTokenWrapper = new ExpireHandleTokenWrapper(token, instant);
+        expireHandleTokenWrapper.token.setValue(TokenKit.newToken());
         return expireHandleTokenWrapper;
     }
 }

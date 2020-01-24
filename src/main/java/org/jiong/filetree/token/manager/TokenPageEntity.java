@@ -1,7 +1,7 @@
 package org.jiong.filetree.token.manager;
 
+import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
-import org.jiong.filetree.common.util.TokenKit;
 import org.jiong.protobuf.TokenInfo;
 import org.jiong.protobuf.TokenPool;
 
@@ -13,9 +13,13 @@ import java.util.Optional;
 
 /**
  * store tokens of tokenPage
- * <p>
- * read tokens from file after app started
- * write tokens to file when task triggered
+ *
+ * implements  for reading tokens from file and write tokens to file
+ *
+ * a token with non-empty value is available, when set a new token value,
+ * then the token is used and is not available any more, but it still is valid
+ * if it is normal or not out of expired time.
+ *
  * todo 实现tokenPage定时检测任务，从内存中把最近不用的tokenPage释放到磁盘中
  * @author Mr.Jiong
  */
@@ -31,12 +35,15 @@ class TokenPageEntity {
      */
     private int size;
 
+    /** size of tokens have value */
+    private int usedSize;
+
     /**
      * total valid token size in a tokenPage
      */
     private int validCount;
 
-    private Instant last;
+    private Instant lastCheckTime;
 
     private TokenPageEntity() {
     }
@@ -47,7 +54,10 @@ class TokenPageEntity {
         File file = new File(filePath);
         if (!file.exists()) {
             try {
-                file.createNewFile();
+                boolean newFile = file.createNewFile();
+                if (!newFile) {
+                    log.warn("Creating file failed");
+                }
             } catch (IOException e) {
                 log.error("create file failed", e);
             }
@@ -58,7 +68,7 @@ class TokenPageEntity {
 
             for (int i = 0; i < validCount; i++) {
                 TokenInfo.Token.Builder tokenBuilder = TokenInfo.Token.newBuilder();
-                tokenBuilder.setValue(TokenKit.newToken());
+                // ignore set value when init
                 tokenBuilder.setType(tokenType);
                 tokenBuilder.setIsValid(true);
 
@@ -69,9 +79,9 @@ class TokenPageEntity {
             tokenPage.writeTo(outputStream);
 
             tokenFile = file;
-            size = this.validCount = validCount;
+            size = this.validCount = usedSize = validCount;
             page = tokenPage;
-            last = Instant.now();
+            lastCheckTime = Instant.now();
         } catch (IOException e) {
             log.error("create new tokenPage failed", e);
             throw new RuntimeException(e);
@@ -128,10 +138,15 @@ class TokenPageEntity {
             List<TokenInfo.Token> tokenList = page.getTokenList();
             this.size = tokenList.size();
             this.validCount = (int) tokenList.stream().filter(TokenInfo.Token::getIsValid).count();
+            usedSize = (int) tokenList.stream().filter(token -> Strings.isNullOrEmpty(token.getValue())).count();
         } catch (IOException e) {
             log.error("io error", e);
             throw new RuntimeException("cant read tokenPage data from file");
         }
+    }
+
+    List<TokenInfo.Token> tokens() {
+        return page.getTokenList();
     }
 
     boolean hasToken(TokenInfo.Token targetToken) {
@@ -173,15 +188,19 @@ class TokenPageEntity {
         return size;
     }
 
+    public int getUsedSize() {
+        return usedSize;
+    }
+
     public int getValidCount() {
         return validCount;
     }
 
-    public Instant getLast() {
-        if (last == null) {
+    public Instant getLastCheckTime() {
+        if (lastCheckTime == null) {
             return null;
         }
-        return Instant.ofEpochMilli(last.toEpochMilli());
+        return Instant.ofEpochMilli(lastCheckTime.toEpochMilli());
     }
 
     public String getPageName() {

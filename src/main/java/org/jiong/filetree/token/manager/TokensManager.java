@@ -1,8 +1,10 @@
 package org.jiong.filetree.token.manager;
 
+import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
 import org.jiong.filetree.common.TokenManageConfig;
 import org.jiong.filetree.token.ExpireHandleTokenWrapper;
+import org.jiong.filetree.token.ExpiredHandleToken;
 import org.jiong.filetree.token.HandleToken;
 import org.jiong.filetree.token.HandleTokenWrapper;
 import org.jiong.protobuf.TokenInfo;
@@ -17,11 +19,10 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.DelayQueue;
 import java.util.stream.Collectors;
 
 /**
@@ -84,7 +85,7 @@ public class TokensManager {
     private static HandleToken newToken(boolean isExpired, Instant deadDate) {
         HandleToken token;
         if (!isExpired) {
-            token = HandleTokenWrapper.asHandleToken(createToken(TokenInfo.Token.TokenType.FOREVER, 0L));
+            token = createToken(TokenInfo.Token.TokenType.FOREVER, 0L);
             return token;
         }
 
@@ -92,20 +93,82 @@ public class TokensManager {
             deadDate = Instant.now().plus(30, ChronoUnit.MINUTES);
         }
 
-        token = ExpireHandleTokenWrapper.asHandleToken(createToken(TokenInfo.Token.TokenType.TEMP, deadDate.toEpochMilli()));
+        token = createToken(TokenInfo.Token.TokenType.TEMP, deadDate.toEpochMilli());
         return token;
     }
 
     /**
-     * todo 实现token的创建，从现有的tokenPage中查找可以分配的token，
      * 如果没有则新建tokenPage然后在分配token
-     * @param tokenType
-     * @param deadTime
-     * @return
+     *
+     * @param tokenType token type, normal or expire
+     * @param deadTime  dead time for expire token
+     * @return new token
      */
-    private static TokenInfo.Token createToken(TokenInfo.Token.TokenType tokenType, long deadTime) {
+    private static HandleToken createToken(TokenInfo.Token.TokenType tokenType, long deadTime) {
+        switch (tokenType) {
+            case FOREVER:
+                return takeTokenFromPage();
+            case TEMP:
+                return tokenExpireTokenFromPage(deadTime);
+            case UNRECOGNIZED:
+                log.warn("unknown token type: {}", tokenType.name());
+                throw new IllegalArgumentException("unknown token type");
+            default:
+                log.warn("unmatched token type");
+                throw new IllegalArgumentException("unmatched token type");
+        }
+    }
 
-        return null;
+    /**
+     * take token from expire tokenPage
+     *
+     * @param deadTime expire time
+     * @return expire token
+     */
+    private static ExpiredHandleToken tokenExpireTokenFromPage(long deadTime) {
+        Optional<TokenPageEntity> pageEntity = EXPIRED_TOKENS.values().stream()
+                .filter(tokenPageEntity -> tokenPageEntity.getSize() > tokenPageEntity.getUsedSize())
+                .findFirst();
+
+        ExpiredHandleToken expiredHandleToken;
+        if (pageEntity.isPresent()) {
+            TokenInfo.Token availableToken = pageEntity.get().tokens().stream().
+                    filter(token -> !Strings.isNullOrEmpty(token.getValue()))
+                    .findFirst().get();
+            expiredHandleToken = ExpireHandleTokenWrapper.newInstance(availableToken, deadTime);
+        } else {
+            expiredHandleToken = ExpireHandleTokenWrapper.newInstance(createExpireTokenPage().tokens().get(0), deadTime);
+        }
+
+        return expiredHandleToken;
+    }
+
+    /**
+     * token token as normal token
+     *
+     * @return normal token
+     */
+    private static HandleToken takeTokenFromPage() {
+        Optional<TokenPageEntity> availableTokenPage = TOKENS.values().stream()
+                .filter(tokenPageEntity -> tokenPageEntity.getSize() > tokenPageEntity.getUsedSize())
+                .findFirst();
+
+        HandleToken handleToken;
+        TokenInfo.Token token;
+        if (availableTokenPage.isPresent()) {
+            TokenPageEntity tokenPageEntity = availableTokenPage.get();
+            token = tokenPageEntity.tokens().stream().filter(tokenItem -> Strings.isNullOrEmpty(tokenItem.getValue()))
+                    .findFirst().get();
+        } else {
+            TokenPageEntity normalTokenPage = createNormalTokenPage();
+            TOKENS.put(normalTokenPage.getPageName(), normalTokenPage);
+
+// todo add timer to remove token page
+            token = normalTokenPage.tokens().get(0);
+        }
+
+        handleToken = HandleTokenWrapper.newInstance(token);
+        return handleToken;
     }
 
     @PostConstruct
@@ -191,6 +254,7 @@ public class TokensManager {
 
     /**
      * remove tokenPage from map for saving memory
+     *
      * @param tokenPageName tokenPage file name
      */
     static void removeTokenPage(String tokenPageName) {

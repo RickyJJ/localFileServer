@@ -1,6 +1,10 @@
 package org.jiong.filetree.token;
 
+import org.jiong.filetree.common.util.TokenKit;
+import org.jiong.filetree.model.TokenEntity;
 import org.jiong.protobuf.TokenInfo;
+
+import java.time.Instant;
 
 /**
  * implement for HandleToken
@@ -8,7 +12,22 @@ import org.jiong.protobuf.TokenInfo;
  */
 public class HandleTokenWrapper implements HandleToken {
 
-    protected TokenInfo.Token token;
+    protected TokenEntity token;
+
+    protected HandleTokenWrapper(TokenInfo.Token token) {
+        this.token = new TokenEntity();
+        this.token.setType(token.getType());
+        this.token.setValue(token.getValue());
+
+        long lastTime = token.getLastTime();
+        this.token.setExpireDate(lastTime == 0 ? null : Instant.ofEpochMilli(lastTime));
+    }
+
+    public static HandleToken newInstance(TokenInfo.Token token) {
+        HandleTokenWrapper tokenWrapper = new HandleTokenWrapper(token);
+        tokenWrapper.token.setValue(TokenKit.newToken());
+        return tokenWrapper;
+    }
 
     @Override
     public String value() {
@@ -20,13 +39,7 @@ public class HandleTokenWrapper implements HandleToken {
         return token != null;
     }
 
-    protected void setToken(TokenInfo.Token token) {
-        this.token = token;
-    }
-    public static HandleToken asHandleToken(TokenInfo.Token token) {
-        HandleTokenWrapper handleTokenWrapper = new HandleTokenWrapper();
-        handleTokenWrapper.setToken(token);
-
-        return handleTokenWrapper;
+    public static HandleToken toHandleToken(TokenInfo.Token token) {
+        return new HandleTokenWrapper(token);
     }
 }

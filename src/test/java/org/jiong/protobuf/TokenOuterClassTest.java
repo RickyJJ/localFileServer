@@ -16,7 +16,6 @@ public class TokenOuterClassTest {
     @Test
     public void writeToProtobufTest() throws IOException {
         TokenInfo.Token token = TokenInfo.Token.newBuilder()
-                .setValue("fjowiefwoe")
                 .setType(TokenInfo.Token.TokenType.FOREVER).build();
 
         FileOutputStream outputStream = new FileOutputStream("test.token");
@@ -28,7 +27,8 @@ public class TokenOuterClassTest {
         FileInputStream inputStream = new FileInputStream("test.token");
         TokenInfo.Token token = TokenInfo.Token.parseFrom(inputStream);
 
-        System.out.println(token.getValue());
+        System.out.println(token.getValue() == null);
+        System.out.println("".equals(token.getValue()));
         System.out.println(token.getType().name());
 
     }
