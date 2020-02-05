@@ -1,5 +1,6 @@
 package org.jiong.filetree.token;
 
+import com.google.common.base.MoreObjects;
 import org.jiong.filetree.common.util.TokenKit;
 import org.jiong.filetree.model.TokenEntity;
 import org.jiong.protobuf.TokenInfo;
@@ -41,5 +42,15 @@ public class HandleTokenWrapper implements HandleToken {
 
     public static HandleToken toHandleToken(TokenInfo.Token token) {
         return new HandleTokenWrapper(token);
+    }
+
+    @Override
+    public String toString() {
+        MoreObjects.ToStringHelper toStringHelper = MoreObjects.toStringHelper(this.getClass())
+                .add("token", token.getValue())
+                .add("tokenType", "normal")
+                .add("isAvailable", "true");
+
+        return toStringHelper.toString();
     }
 }

@@ -1,5 +1,7 @@
 package org.jiong.filetree.token;
 
+import com.google.common.base.MoreObjects;
+import org.jiong.filetree.common.util.DateKit;
 import org.jiong.filetree.common.util.TokenKit;
 import org.jiong.protobuf.TokenInfo;
 
@@ -37,5 +39,16 @@ public class ExpireHandleTokenWrapper extends HandleTokenWrapper implements Expi
         ExpireHandleTokenWrapper expireHandleTokenWrapper = new ExpireHandleTokenWrapper(token, instant);
         expireHandleTokenWrapper.token.setValue(TokenKit.newToken());
         return expireHandleTokenWrapper;
+    }
+
+    @Override
+    public String toString() {
+        Instant expireDate = getExpiredTime();
+        MoreObjects.ToStringHelper toStringHelper = MoreObjects.toStringHelper(this.getClass())
+                .add("token", token.getValue())
+                .add("tokenType", "temporal")
+                .add("isAvailable", isExpired())
+                .add("expireDate", expireDate == null ? "null" : DateKit.timestamp(expireDate));
+        return toStringHelper.toString();
     }
 }
