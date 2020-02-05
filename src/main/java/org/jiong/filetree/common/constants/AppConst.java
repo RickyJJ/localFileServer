@@ -7,4 +7,7 @@ public interface AppConst {
     String ERR_MSG = "error_msg";
     String STATUS = "STATUS";
     String MSG = "msg";
+    String OK = "1";
+    String FAIL = "0";
+    String CURRENT_USER = "_current_user";
 }
