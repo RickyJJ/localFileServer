@@ -2,24 +2,23 @@ package org.jiong.filetree.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jiong.filetree.common.DirectoryProperties;
+import org.jiong.filetree.common.constants.AppConst;
 import org.jiong.filetree.model.FileItem;
+import org.jiong.filetree.model.Result;
 import org.jiong.filetree.service.FileListService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jiong.filetree.token.HandleToken;
+import org.jiong.filetree.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
@@ -138,5 +137,34 @@ public class TreeController extends BaseController {
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + URLEncoder.encode(file.getName(), "UTF-8"));
 
         return ResponseEntity.ok().headers(headers).contentLength(file.length()).body(new FileSystemResource(file));
+    }
+
+    /**
+     * user apply token to be allowed to use app
+     *
+     *  User create a new apply to acquire token
+     *  if user has normal token, ignore it, or create new apply
+     *
+     * Just in test, not for use
+     * @return json with permit to use app
+     */
+    @RequestMapping("/token/apply")
+    public Result userApplyToken() {
+        User currentUser = getCurrentUser();
+
+        HandleToken userToken = currentUser.getToken();
+
+        if (userToken == null || !userToken.isAvailable()) {
+            log.info("User [{}] has not token or valid token, now create new token", currentUser.getName());
+            return Result.ok();
+        } else if (userToken.isTemporal()) {
+            log.info("User [{}] has temporal token , applying for new token", currentUser.getName());
+            // todo impl user token apply
+            return Result.ok();
+        } else {
+            // ignore
+            log.info("Token: {}", userToken);
+            return Result.fail(AppConst.FAIL, "unknown token status", null);
+        }
     }
 }

@@ -4,17 +4,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.jiong.filetree.common.TokenManageConfig;
 import org.jiong.filetree.common.constants.AppConst;
 import org.jiong.filetree.common.util.HttpKit;
-import org.jiong.filetree.user.User;
+import org.jiong.filetree.model.Result;
 import org.jiong.filetree.token.HandleToken;
 import org.jiong.filetree.token.manager.TokensManager;
+import org.jiong.filetree.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author Mr.Jiong
@@ -38,28 +37,57 @@ public class TokenController extends BaseController {
         return "tokensManager";
     }
 
-    @RequestMapping("/token/create")
+    /**
+     * get or create new token
+     * @return if success, return token
+     *
+     */
+    @RequestMapping("/token/active")
     @ResponseBody
-    public Map<String, String> createToken() {
+    public Result createToken() {
         String tokenType = (String) getAttr("tokenType");
         User user = getCurrentUser();
 
         log.info("tokenType is : {}", tokenType);
 
-        Map<String, String> result = new HashMap<>(8);
         HandleToken token;
         if ("1".equals(tokenType)) {
             token = TokensManager.newToken();
         } else if ("2".equals(tokenType)) {
             token = TokensManager.newToken(true);
         } else {
-            result.put(AppConst.STATUS, "0");
-            result.put(AppConst.MSG, "Unknown token type.");
-            return result;
+            return Result.fail(AppConst.FAIL, "Unknown token type.", null);
         }
 
-        result.put(AppConst.STATUS, "1");
-        result.put("newToken", token.value());
-        return result;
+        user.updateToken(token);
+        return Result.ok().add("token", token.value());
+    }
+
+    /**
+     * Activate new token for user
+     * Find token in token manager, and validate status of token
+     * if status of token is available, then update status of user's
+     * @return result of validation,
+     */
+    @RequestMapping("/token/active")
+    @ResponseBody
+    public Result activateToken() {
+        String tokenStr = (String) getAttr("token");
+        User user = getCurrentUser();
+
+        log.info("Invite token is : {}", tokenStr);
+
+        HandleToken handleToken = TokensManager.getToken(tokenStr);
+        if (handleToken == null) {
+            log.info("Token does not exist.");
+            return Result.fail(AppConst.FAIL, "token not exist");
+        } else if (!handleToken.isAvailable()){
+            log.warn("Token is already available now. {}", handleToken);
+            return Result.fail(AppConst.FAIL, "Unknown token type.");
+        }
+
+        log.info("Update user's token success.");
+        user.updateToken(handleToken);
+        return Result.ok();
     }
 }

@@ -1,6 +1,8 @@
 package org.jiong.filetree.controller;
 
+import org.jiong.filetree.common.constants.AppConst;
 import org.jiong.filetree.common.util.HttpKit;
+import org.jiong.filetree.common.util.SessionKit;
 import org.jiong.filetree.user.User;
 import org.jiong.filetree.user.UserFactory;
 import org.springframework.web.context.request.RequestAttributes;
@@ -33,13 +35,11 @@ abstract class BaseController {
     }
 
     protected Object getSessionAttr(String attrName) {
-        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        return request.getSession().getAttribute(attrName);
+        return SessionKit.getSession().getAttribute(attrName);
     }
 
     protected Object setSessionAttr(String attrName, Object attrVal) {
-        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        request.getSession().setAttribute(attrName, attrVal);
+        SessionKit.getSession().setAttribute(attrName, attrVal);
         return this;
     }
 
@@ -73,7 +73,7 @@ abstract class BaseController {
     }
 
     protected User getCurrentUser() {
-        User currentUser = (User) getSessionAttr("_current_user");
+        User currentUser = (User) getSessionAttr(AppConst.CURRENT_USER);
 
         if (currentUser == null) {
 
