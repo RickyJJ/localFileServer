@@ -16,6 +16,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import javax.servlet.http.HttpServletRequest;
 
 /**
+ * this controller is used for token manager to manage token-making
+ * and token-applying
+ * The manager could create new token if he found that tokens is not enough.
+ * And manager could handle requests for tokens applying.
+ *
  * @author Mr.Jiong
  */
 @Controller
@@ -24,6 +29,12 @@ public class TokenController extends BaseController {
     @Autowired
     private TokenManageConfig tokenManageConfig;
 
+    /**
+     * Get into the manager page
+     *
+     * @param request request
+     * @return page
+     */
     @RequestMapping("/token/manager")
     public String managerToken(HttpServletRequest request) {
         String ip = HttpKit.getIpAddress(request);
@@ -38,11 +49,13 @@ public class TokenController extends BaseController {
     }
 
     /**
-     * get or create new token
-     * @return if success, return token
+     * create new tokens are not enough
+     * if tokens system has are enough then not going to create new tokens
+     * else create new ones.
      *
+     * @return if success, return token
      */
-    @RequestMapping("/token/active")
+    @RequestMapping("/token/create")
     @ResponseBody
     public Result createToken() {
         String tokenType = (String) getAttr("tokenType");
@@ -64,14 +77,16 @@ public class TokenController extends BaseController {
     }
 
     /**
-     * Activate new token for user
-     * Find token in token manager, and validate status of token
-     * if status of token is available, then update status of user's
+     * Dispatch a new token for a user
+     * To a certain request for token, manager could choose to dispatch a new token to the user or just ignore it.
+     * <p>
+     * if status of token changed, then update it to file
+     *
      * @return result of validation,
      */
-    @RequestMapping("/token/active")
+    @RequestMapping("/token/dispatch")
     @ResponseBody
-    public Result activateToken() {
+    public Result dispatchToken() {
         String tokenStr = (String) getAttr("token");
         User user = getCurrentUser();
 
@@ -81,13 +96,27 @@ public class TokenController extends BaseController {
         if (handleToken == null) {
             log.info("Token does not exist.");
             return Result.fail(AppConst.FAIL, "token not exist");
-        } else if (!handleToken.isAvailable()){
+        } else if (!handleToken.isAvailable()) {
             log.warn("Token is already available now. {}", handleToken);
             return Result.fail(AppConst.FAIL, "Unknown token type.");
         }
 
         log.info("Update user's token success.");
         user.updateToken(handleToken);
+        return Result.ok();
+    }
+
+    /**
+     * a request from the user to apply for a new token
+     * a user could apply it for many times but a apply is illegal at a time
+     * <p>
+     * Server record requests as queues in files to handle them
+     *
+     * @return result of request for apply, not the result of applying
+     */
+    @RequestMapping("/token/apply")
+    @ResponseBody
+    public Result applyToken() {
         return Result.ok();
     }
 }
