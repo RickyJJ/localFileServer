@@ -5,7 +5,9 @@ import org.jiong.filetree.common.DirectoryProperties;
 import org.jiong.filetree.common.constants.AppConst;
 import org.jiong.filetree.model.FileItem;
 import org.jiong.filetree.model.Result;
+import org.jiong.filetree.service.ClientService;
 import org.jiong.filetree.service.FileListService;
+import org.jiong.filetree.service.impl.ClientServiceImpl;
 import org.jiong.filetree.token.HandleToken;
 import org.jiong.filetree.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,11 +42,17 @@ import java.util.Objects;
 @Controller
 @Slf4j
 public class TreeController extends BaseController {
-    @Autowired
-    private DirectoryProperties directoryProperties;
+    private final DirectoryProperties directoryProperties;
 
-    @Autowired
-    private FileListService fileListService;
+    private final FileListService fileListService;
+
+    private final ClientService clientService;
+
+    public TreeController(DirectoryProperties directoryProperties, FileListService fileListService, ClientServiceImpl clientService) {
+        this.directoryProperties = directoryProperties;
+        this.fileListService = fileListService;
+        this.clientService = clientService;
+    }
 
     @RequestMapping("/")
     public String goTreePage() {
@@ -153,18 +161,18 @@ public class TreeController extends BaseController {
         User currentUser = getCurrentUser();
 
         HandleToken userToken = currentUser.getToken();
+        log.info("ready for applying token for user: {}", currentUser.getName());
 
         if (userToken == null || !userToken.isAvailable()) {
             log.info("User [{}] has not token or valid token, now create new token", currentUser.getName());
-            return Result.ok();
+            return clientService.applyToken(currentUser);
         } else if (userToken.isTemporal()) {
-            log.info("User [{}] has temporal token , applying for new token", currentUser.getName());
-            // todo impl user token apply
+            log.info("User [{}] has temporal token , don't need to applying for token", currentUser.getName());
             return Result.ok();
         } else {
             // ignore
-            log.info("Token: {}", userToken);
-            return Result.fail(AppConst.FAIL, "unknown token status", null);
+            log.info("User has long-term token, don't need to applying for token");
+            return Result.ok();
         }
     }
 }

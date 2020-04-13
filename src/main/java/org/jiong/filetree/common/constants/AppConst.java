@@ -10,4 +10,7 @@ public interface AppConst {
     String OK = "1";
     String FAIL = "0";
     String CURRENT_USER = "_current_user";
+
+    String SERVER_URL = "";
+    int HTTP_TIME_OUT = 30;
 }
