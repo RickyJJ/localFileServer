@@ -79,9 +79,9 @@ public class UserFactory {
         TokenInfo.Token token = userProto.getToken();
         TokenInfo.Token.TokenType type = token.getType();
         if (type == TokenInfo.Token.TokenType.FOREVER) {
-            return HandleTokenWrapper.asHandleToken(token);
+            return HandleTokenWrapper.toHandleToken(token);
         } else if (type == TokenInfo.Token.TokenType.TEMP) {
-            return ExpireHandleTokenWrapper.asHandleToken(token);
+            return ExpireHandleTokenWrapper.toHandleToken(token);
         } else {
             throw new IllegalArgumentException("Unknown token type.");
         }

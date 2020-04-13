@@ -5,7 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.jiong.protobuf.TokenInfo;
 import org.jiong.protobuf.TokenPool;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -20,7 +23,6 @@ import java.util.Optional;
  * then the token is used and is not available any more, but it still is valid
  * if it is normal or not out of expired time.
  *
- * todo 实现tokenPage定时检测任务，从内存中把最近不用的tokenPage释放到磁盘中
  * @author Mr.Jiong
  */
 @Slf4j
@@ -81,7 +83,9 @@ class TokenPageEntity {
             tokenFile = file;
             size = this.validCount = usedSize = validCount;
             page = tokenPage;
-            lastCheckTime = Instant.now();
+            Instant now = Instant.now();
+            // 两分钟检测一次token page的被访问情况
+            lastCheckTime = now.plusSeconds(120);
         } catch (IOException e) {
             log.error("create new tokenPage failed", e);
             throw new RuntimeException(e);
@@ -201,6 +205,10 @@ class TokenPageEntity {
             return null;
         }
         return Instant.ofEpochMilli(lastCheckTime.toEpochMilli());
+    }
+
+    public void setLastCheckTime(Instant instant) {
+        this.lastCheckTime = instant;
     }
 
     public String getPageName() {

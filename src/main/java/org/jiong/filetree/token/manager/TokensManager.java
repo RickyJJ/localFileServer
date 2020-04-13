@@ -2,14 +2,13 @@ package org.jiong.filetree.token.manager;
 
 import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
+import org.jiong.filetree.AppBoot;
 import org.jiong.filetree.common.TokenManageConfig;
 import org.jiong.filetree.token.ExpireHandleTokenWrapper;
 import org.jiong.filetree.token.ExpiredHandleToken;
 import org.jiong.filetree.token.HandleToken;
 import org.jiong.filetree.token.HandleTokenWrapper;
 import org.jiong.protobuf.TokenInfo;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
@@ -19,10 +18,15 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.time.temporal.TemporalUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.DelayQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.stream.Collectors;
 
 /**
@@ -30,7 +34,6 @@ import java.util.stream.Collectors;
  *
  * @author Mr.Jiong
  */
-@Component
 @Slf4j
 public class TokensManager {
     /**
@@ -43,19 +46,21 @@ public class TokensManager {
      */
     private final static ConcurrentMap<String, TokenPageEntity> EXPIRED_TOKENS = new ConcurrentHashMap<>();
 
+    private final static BlockingDeque<TokenPageEntity> NORMAL_WAITING_PAGE_QUEUE = new LinkedBlockingDeque<>();
+    private final static BlockingDeque<TokenPageEntity> EXPIRE_WAITING_PAGE_QUEUE = new LinkedBlockingDeque<>();
+
     private static int normalCount = 0;
 
-    private static int expireCount = 0;
+    private static int temporalCount = 0;
 
-    @Autowired
     private static TokenManageConfig tokenManageConfig;
 
     public static int totalSize() {
-        return normalTokenCount() + expireTokenCount();
+        return normalTokenCount() + temporalTokenCount();
     }
 
-    public static int expireTokenCount() {
-        return expireCount;
+    public static int temporalTokenCount() {
+        return temporalCount;
     }
 
     public static int normalTokenCount() {
@@ -63,8 +68,9 @@ public class TokensManager {
     }
 
 
-    public static HandleToken newToken(Date deadDate) {
-        return newToken(true, deadDate.toInstant());
+    public static HandleToken newToken(long time, TemporalUnit timeUnit) {
+        Instant plus = Instant.now().plus(time, timeUnit);
+        return newToken(true, plus);
     }
 
     public static HandleToken newToken(boolean isTemp) {
@@ -135,9 +141,14 @@ public class TokensManager {
             TokenInfo.Token availableToken = pageEntity.get().tokens().stream().
                     filter(token -> !Strings.isNullOrEmpty(token.getValue()))
                     .findFirst().get();
+            // update date of page in queue
+            pageEntity.get().setLastCheckTime(Instant.now());
             expiredHandleToken = ExpireHandleTokenWrapper.newInstance(availableToken, deadTime);
         } else {
-            expiredHandleToken = ExpireHandleTokenWrapper.newInstance(createExpireTokenPage().tokens().get(0), deadTime);
+            TokenPageEntity newExpireTokenPage = createExpireTokenPage();
+            EXPIRED_TOKENS.put(newExpireTokenPage.getPageName(), newExpireTokenPage);
+            EXPIRE_WAITING_PAGE_QUEUE.add(newExpireTokenPage);
+            expiredHandleToken = ExpireHandleTokenWrapper.newInstance(newExpireTokenPage.tokens().get(0), deadTime);
         }
 
         return expiredHandleToken;
@@ -159,11 +170,12 @@ public class TokensManager {
             TokenPageEntity tokenPageEntity = availableTokenPage.get();
             token = tokenPageEntity.tokens().stream().filter(tokenItem -> Strings.isNullOrEmpty(tokenItem.getValue()))
                     .findFirst().get();
+            tokenPageEntity.setLastCheckTime(Instant.now());
         } else {
             TokenPageEntity normalTokenPage = createNormalTokenPage();
             TOKENS.put(normalTokenPage.getPageName(), normalTokenPage);
 
-// todo add timer to remove token page
+            NORMAL_WAITING_PAGE_QUEUE.add(normalTokenPage);
             token = normalTokenPage.tokens().get(0);
         }
 
@@ -174,6 +186,8 @@ public class TokensManager {
     @PostConstruct
     public static void init() {
         log.info("init TokensManager...");
+
+        tokenManageConfig = AppBoot.getAppContext().getBean(TokenManageConfig.class);
 
         List<TokenPageEntity> normal = loadTokenPage("normal", (file -> file.getName().endsWith(".token")));
         List<TokenPageEntity> temporal = loadTokenPage("temporal", (file -> file.getName().endsWith(".token")));
@@ -189,8 +203,14 @@ public class TokensManager {
             temporal.forEach(tokenPageEntity -> EXPIRED_TOKENS.put(tokenPageEntity.getPageName(), tokenPageEntity));
         }
 
-        EXPIRED_TOKENS.values().forEach(tokenPageEntity -> expireCount += tokenPageEntity.getValidCount());
-        log.info("valid expireTokens count: {}", expireCount);
+        EXPIRED_TOKENS.values().forEach(tokenPageEntity -> temporalCount += tokenPageEntity.getValidCount());
+        log.info("valid expireTokens count: {}", temporalCount);
+
+        List<Thread> tasks = new ArrayList<>();
+        tasks.add(new TokenQueryLoopTask(NORMAL_WAITING_PAGE_QUEUE, 60));
+        tasks.add(new TokenQueryLoopTask(EXPIRE_WAITING_PAGE_QUEUE, 30));
+
+        tasks.forEach(Thread::start);
     }
 
     /**
@@ -199,7 +219,7 @@ public class TokensManager {
      * @return token page
      */
     private static TokenPageEntity createNormalTokenPage() {
-        File tokenFile = createTokenFile();
+        File tokenFile = createTokenFile("normal");
         return new TokenPageEntity(tokenFile.getAbsolutePath(), TokenInfo.Token.TokenType.FOREVER, 50);
     }
 
@@ -209,14 +229,14 @@ public class TokensManager {
      * @return token page
      */
     private static TokenPageEntity createExpireTokenPage() {
-        File tokenFile = createTokenFile();
+        File tokenFile = createTokenFile("temporal");
         return new TokenPageEntity(tokenFile.getAbsolutePath(), TokenInfo.Token.TokenType.TEMP, 20);
     }
 
-    private static File createTokenFile() {
+    private static File createTokenFile(String subPackage) {
         String tokenPath = tokenManageConfig.getTokenPath();
         while (true) {
-            String tokenFilePath = tokenPath + File.pathSeparator + createFileName();
+            String tokenFilePath = tokenPath + File.separatorChar + subPackage + File.separatorChar + createFileName();
             File file = new File(tokenFilePath);
             if (!file.exists()) {
                 try {
@@ -232,12 +252,12 @@ public class TokensManager {
     }
 
     private static String createFileName() {
-        return "token_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssfff")) + ".token";
+        return "token_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")) + ".token";
     }
 
     private static List<TokenPageEntity> loadTokenPage(String subTokenPage, FileFilter fileFilter) {
         String tokenPath = tokenManageConfig.getTokenPath();
-        File tokenPageDir = new File(tokenPath + File.pathSeparator + subTokenPage);
+        File tokenPageDir = new File(tokenPath + File.separatorChar + subTokenPage);
 
         if (!tokenPageDir.exists() || !tokenPageDir.isDirectory()) {
             log.warn("{} does not exist, now create new one", subTokenPage);
@@ -269,4 +289,14 @@ public class TokensManager {
         }
     }
 
+    /**
+     * Find token in TOKENS and EXPIRED_TOKENS
+     *
+     * @param token token to find
+     * @return if not exist, return null, or token
+     */
+    public static HandleToken getToken(String token) {
+        // todo 在内存中寻找token，如果不存在则从文件中查询，否则返回null
+        return null;
+    }
 }

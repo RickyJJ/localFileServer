@@ -1,8 +1,9 @@
 package org.jiong.filetree.common;
 
+import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 import org.jiong.filetree.common.factory.MyPropertiesSourceFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
@@ -15,12 +16,13 @@ import org.springframework.stereotype.Component;
 @Component("fileConfig")
 @PropertySource(value = "classpath:custom.yml", factory = MyPropertiesSourceFactory.class)
 @ConfigurationProperties(prefix = "file")
+@Data
 public class DirectoryProperties {
 
-    @Getter
+    @Getter @Setter
     private String dir;
 
-    @Getter
+    @Getter @Setter
     private String userPath;
 
 }
