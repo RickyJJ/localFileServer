@@ -39,6 +39,10 @@ public class Result {
         return ok(null, null);
     }
 
+    public static Result fail(String msg) {
+        return fail(AppConst.FAIL, msg);
+    }
+
     public Result add(String key, String value) {
         if (data == null) {
             data = new HashMap<>();
@@ -46,5 +50,29 @@ public class Result {
 
         data.put(key, value);
         return this;
+    }
+
+    public boolean isOk() {
+        return AppConst.OK.equals(this.flag);
+    }
+
+    public boolean isFailed() {
+        return !isOk();
+    }
+
+    public Object get(String key) {
+        if (data != null) {
+            return data.get(key);
+        }
+
+        return null;
+    }
+
+    public String getFlag() {
+        return flag;
+    }
+
+    public String getMessage() {
+        return message;
     }
 }

@@ -2,7 +2,6 @@ package org.jiong.filetree.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jiong.filetree.common.DirectoryProperties;
-import org.jiong.filetree.common.constants.AppConst;
 import org.jiong.filetree.model.FileItem;
 import org.jiong.filetree.model.Result;
 import org.jiong.filetree.service.ClientService;
@@ -10,7 +9,6 @@ import org.jiong.filetree.service.FileListService;
 import org.jiong.filetree.service.impl.ClientServiceImpl;
 import org.jiong.filetree.token.HandleToken;
 import org.jiong.filetree.user.User;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -149,11 +147,12 @@ public class TreeController extends BaseController {
 
     /**
      * user apply token to be allowed to use app
-     *
-     *  User create a new apply to acquire token
-     *  if user has normal token, ignore it, or create new apply
-     *
+     * <p>
+     * User create a new apply to acquire token
+     * if user has normal token, ignore it, or create new apply
+     * <p>
      * Just in test, not for use
+     *
      * @return json with permit to use app
      */
     @RequestMapping("/token/apply")
@@ -165,7 +164,16 @@ public class TreeController extends BaseController {
 
         if (userToken == null || !userToken.isAvailable()) {
             log.info("User [{}] has not token or valid token, now create new token", currentUser.getName());
-            return clientService.applyToken(currentUser);
+
+            Result result = clientService.applyToken(currentUser);
+            if (result.isOk()) {
+                log.info("Get token key.");
+                setSessionAttr("tokenKey", result.get("key"));
+            } else {
+                log.info("Token apply failed.");
+            }
+
+            return result;
         } else if (userToken.isTemporal()) {
             log.info("User [{}] has temporal token , don't need to applying for token", currentUser.getName());
             return Result.ok();
@@ -174,5 +182,30 @@ public class TreeController extends BaseController {
             log.info("User has long-term token, don't need to applying for token");
             return Result.ok();
         }
+    }
+
+    @RequestMapping("/token/check")
+    public Result userCheckAndFetchToken() {
+        User currentUser = getCurrentUser();
+
+        String tokenKey = (String) getSessionAttr("tokenKey");
+        if (tokenKey == null) {
+            return Result.fail("There is no key to fetch token.");
+        } else {
+            Result result = clientService.fetchToken(currentUser, tokenKey);
+
+            if (result.isOk()) {
+                log.info("Get token.");
+                String token = (String) result.get("token");
+                currentUser.updateToken(token);
+            } else {
+                log.warn("Fetching token failed. code: {}, msg: {}", result.getFlag(), result.getMessage());
+            }
+
+            setSessionAttr("tokenKey", null);
+
+            return result;
+        }
+
     }
 }
