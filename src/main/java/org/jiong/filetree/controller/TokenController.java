@@ -5,10 +5,10 @@ import org.jiong.filetree.common.TokenManageConfig;
 import org.jiong.filetree.common.constants.AppConst;
 import org.jiong.filetree.common.util.HttpKit;
 import org.jiong.filetree.model.Result;
+import org.jiong.filetree.service.ServerService;
 import org.jiong.filetree.token.HandleToken;
 import org.jiong.filetree.token.manager.TokensManager;
-import org.jiong.filetree.user.User;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.jiong.protobuf.TokenInfo;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -28,8 +28,11 @@ import javax.servlet.http.HttpServletRequest;
 public class TokenController extends BaseController {
     private final TokenManageConfig tokenManageConfig;
 
-    public TokenController(TokenManageConfig tokenManageConfig) {
+    private final ServerService serverService;
+
+    public TokenController(TokenManageConfig tokenManageConfig, ServerService serverService) {
         this.tokenManageConfig = tokenManageConfig;
+        this.serverService = serverService;
     }
 
     /**
@@ -80,11 +83,10 @@ public class TokenController extends BaseController {
     /**
      * The server operator dispatch a new token for the request of a user.
      * To a certain request for token, manager could choose to dispatch a new token to the user or just ignore it.
-     *
+     * <p>
      * the promise action result will stored in an array in memory(in file when offline).
      * when the client is getting token with a key, then search result in the array and return it to the client.
      * <p>
-     *
      *
      * @return result include token if promise action is success, or failed msg
      */
@@ -112,7 +114,7 @@ public class TokenController extends BaseController {
      * a request from the client applying for a new token
      * a user could apply it for many times but one apply is illegal at a time
      * <p>
-     *
+     * <p>
      * Server will handle it and give a result immediately which not presents
      * a new token is dispatched to the client, but just a key to get the token
      * Then Server operator will decide is or not to dispatch the token to the client manually.
@@ -123,6 +125,20 @@ public class TokenController extends BaseController {
     @ResponseBody
     public Result applyToken() {
         // todo receive request for apply tokens and return handling results
+        HttpServletRequest request = getRequest();
+        String ipAddress = HttpKit.getIpAddress(request);
+        String user = (String) getAttr("user");
+
+        Result result = serverService.applyToken(ipAddress, user);
+        if (result.isOk()) {
+            log.info("Successfully applied token for user {}[{}]", user, ipAddress);
+            result = serverService.addToResultQueue(ipAddress, user, (String) result.get("key"), (TokenInfo.Token) result.get("token"));
+
+            log.info("Stored token result for user {}[{}], wait for fetching: {}", user, ipAddress, result);
+            return result;
+        } else {
+            log.info("User apply failed: {}", result);
+        }
         return Result.ok();
     }
 }
