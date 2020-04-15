@@ -26,8 +26,11 @@ import javax.servlet.http.HttpServletRequest;
 @Controller
 @Slf4j
 public class TokenController extends BaseController {
-    @Autowired
-    private TokenManageConfig tokenManageConfig;
+    private final TokenManageConfig tokenManageConfig;
+
+    public TokenController(TokenManageConfig tokenManageConfig) {
+        this.tokenManageConfig = tokenManageConfig;
+    }
 
     /**
      * Get into the manager page
@@ -59,7 +62,6 @@ public class TokenController extends BaseController {
     @ResponseBody
     public Result createToken() {
         String tokenType = (String) getAttr("tokenType");
-        User user = getCurrentUser();
 
         log.info("tokenType is : {}", tokenType);
 
@@ -72,23 +74,24 @@ public class TokenController extends BaseController {
             return Result.fail(AppConst.FAIL, "Unknown token type.", null);
         }
 
-        user.updateToken(token);
         return Result.ok().add("token", token.value());
     }
 
     /**
-     * Dispatch a new token for a user
+     * The server operator dispatch a new token for the request of a user.
      * To a certain request for token, manager could choose to dispatch a new token to the user or just ignore it.
-     * <p>
-     * if status of token changed, then update it to file
      *
-     * @return result of validation,
+     * the promise action result will stored in an array in memory(in file when offline).
+     * when the client is getting token with a key, then search result in the array and return it to the client.
+     * <p>
+     *
+     *
+     * @return result include token if promise action is success, or failed msg
      */
     @RequestMapping("/token/dispatch")
     @ResponseBody
     public Result dispatchToken() {
         String tokenStr = (String) getAttr("token");
-        User user = getCurrentUser();
 
         log.info("Invite token is : {}", tokenStr);
 
@@ -102,21 +105,24 @@ public class TokenController extends BaseController {
         }
 
         log.info("Update user's token success.");
-        user.updateToken(handleToken);
         return Result.ok();
     }
 
     /**
-     * a request from the user to apply for a new token
-     * a user could apply it for many times but a apply is illegal at a time
+     * a request from the client applying for a new token
+     * a user could apply it for many times but one apply is illegal at a time
      * <p>
-     * Server record requests as queues in files to handle them
      *
-     * @return result of request for apply, not the result of applying
+     * Server will handle it and give a result immediately which not presents
+     * a new token is dispatched to the client, but just a key to get the token
+     * Then Server operator will decide is or not to dispatch the token to the client manually.
+     *
+     * @return result with a key, which is necessary to fetch token for the client.
      */
-    @RequestMapping("/token/apply")
+    @RequestMapping("/tokenApply")
     @ResponseBody
     public Result applyToken() {
+        // todo receive request for apply tokens and return handling results
         return Result.ok();
     }
 }
