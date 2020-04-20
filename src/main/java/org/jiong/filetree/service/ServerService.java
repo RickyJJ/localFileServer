@@ -38,4 +38,22 @@ public interface ServerService {
      * @return handle result
      */
     Result findFromResultQueue(String ipAddr, String userName, String key);
+
+    /**
+     * check user's key is valid or not.
+     * @param user a string presents user
+     * @param key a key returned from server when applying succeed
+     * @return boolean true for user's key is valid
+     */
+    boolean checkUserApply(String user, String key);
+
+    /**
+     * find token in result array and return it to client
+     * token has a time limit in result array, if timeout then token will be removed from
+     * result array
+     * @param user a string presents user
+     * @param key a key returned from server when applying succeed
+     * @return result with token if token exist
+     */
+    Result fetchToken(String user, String key);
 }

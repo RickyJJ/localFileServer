@@ -93,21 +93,23 @@ public class TokenController extends BaseController {
     @RequestMapping("/token/dispatch")
     @ResponseBody
     public Result dispatchToken() {
-        String tokenStr = (String) getAttr("token");
+        String user = (String) getAttr("user");
+        String key = (String) getAttr("key");
 
-        log.info("Invite token is : {}", tokenStr);
-
-        HandleToken handleToken = TokensManager.getToken(tokenStr);
-        if (handleToken == null) {
-            log.info("Token does not exist.");
-            return Result.fail(AppConst.FAIL, "token not exist");
-        } else if (!handleToken.isAvailable()) {
-            log.warn("Token is already available now. {}", handleToken);
-            return Result.fail(AppConst.FAIL, "Unknown token type.");
+        log.info("User [{}] is to fetch token. key: {}", user, key);
+        boolean isKeyValid = serverService.checkUserApply(user, key);
+        if (!isKeyValid) {
+            log.info("User key is invalid.");
+            return Result.fail("user key is invalid");
         }
 
-        log.info("Update user's token success.");
-        return Result.ok();
+        Result result = serverService.fetchToken(user, key);
+        if (result.isFailed()) {
+            log.warn("Fetching token failed. return result: {}", result);
+        }
+
+        log.debug("Fetching token success.");
+        return result;
     }
 
     /**
