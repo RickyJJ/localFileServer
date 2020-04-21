@@ -92,9 +92,10 @@ public class TokenController extends BaseController {
      */
     @RequestMapping("/token/dispatch")
     @ResponseBody
-    public Result dispatchToken() {
+    public Result clientGetToken(HttpServletRequest request) {
         String user = (String) getAttr("user");
         String key = (String) getAttr("key");
+        String ipAddress = HttpKit.getIpAddress(request);
 
         log.info("User [{}] is to fetch token. key: {}", user, key);
         boolean isKeyValid = serverService.checkUserApply(user, key);
@@ -103,12 +104,13 @@ public class TokenController extends BaseController {
             return Result.fail("user key is invalid");
         }
 
-        Result result = serverService.fetchToken(user, key);
+        log.info("staring to find token from queue.");
+        Result result = serverService.findFromResultQueue(ipAddress, user, key);
         if (result.isFailed()) {
             log.warn("Fetching token failed. return result: {}", result);
         }
 
-        log.debug("Fetching token success.");
+        log.debug("Found token successfully, then return it back to client");
         return result;
     }
 
