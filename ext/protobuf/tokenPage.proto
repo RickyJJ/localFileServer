@@ -2,7 +2,7 @@ syntax = 'proto3';
 
 option java_outer_classname = 'TokenPool';
 
-package org.jiong.protobuf;
+package localfileserver.protobuf;
 
 import 'token.proto';
 

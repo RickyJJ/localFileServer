@@ -1,7 +1,7 @@
 syntax = "proto3";
 option java_outer_classname = "TokenInfo";
 
-package org.jiong.protobuf;
+package localfileserver.protobuf;
 message Token {
 
     string value = 1;
