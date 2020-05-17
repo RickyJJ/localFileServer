@@ -2,8 +2,6 @@ package localfileserver.client.controller;
 
 import localfileserver.client.entity.User;
 import localfileserver.client.kit.SessionKit;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -72,11 +70,11 @@ abstract class BaseController {
     }
 
     protected User getCurrentUser() {
-        SecurityContext context = SecurityContextHolder.getContext();
-
-        if (context != null) {
-            return ((User) context.getAuthentication());
-        }
+//        SecurityContext context = SecurityContextHolder.getContext();
+//
+//        if (context != null) {
+//            return ((User) context.getAuthentication());
+//        }
 
         return null;
     }

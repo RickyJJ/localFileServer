@@ -195,9 +195,12 @@ public class TreeController extends BaseController {
             Result result = clientService.fetchToken(currentUser, tokenKey);
 
             if (result.isOk()) {
-                log.info("Get token.");
+                log.info("Got token.");
                 String token = (String) result.get("token");
                 currentUser.updateToken(token);
+            } else if ("wait".equals(result.getFlag())) {
+                log.info("token request is waiting, {}", result);
+                return Result.fail("Token request is waiting.");
             } else {
                 log.warn("Fetching token failed. code: {}, msg: {}", result.getFlag(), result.getMessage());
             }

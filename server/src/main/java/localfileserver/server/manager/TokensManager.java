@@ -261,6 +261,7 @@ public class TokensManager {
 
         if (!tokenPageDir.exists() || !tokenPageDir.isDirectory()) {
             log.warn("{} does not exist, now create new one", subTokenPage);
+            //noinspection ResultOfMethodCallIgnored
             tokenPageDir.mkdirs();
         }
 
@@ -287,16 +288,5 @@ public class TokensManager {
         } else {
             log.warn("there is no tokenPage named : {}", tokenPageName);
         }
-    }
-
-    /**
-     * Find token in TOKENS and EXPIRED_TOKENS
-     *
-     * @param token token to find
-     * @return if not exist, return null, or token
-     */
-    public static HandleToken getToken(String token) {
-        // todo 在内存中寻找token，如果不存在则从文件中查询，否则返回null
-        return null;
     }
 }

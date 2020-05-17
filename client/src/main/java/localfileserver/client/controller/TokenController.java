@@ -5,9 +5,10 @@ import localfileserver.api.ServerService;
 import localfileserver.model.Result;
 import localfileserver.protobuf.TokenInfo;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
@@ -18,14 +19,14 @@ import javax.servlet.http.HttpServletRequest;
  * and token-applying
  * The manager could create new token if he found that tokens is not enough.
  * And manager could handle requests for tokens applying.
- *
+ * <p>
  * Need authorize for admin
  *
  * @author Mr.Jiong
  */
 @Slf4j
 @Controller
-@PreAuthorize("admin")
+//@PreAuthorize("admin")
 public class TokenController extends BaseController {
 
     @Reference
@@ -39,7 +40,7 @@ public class TokenController extends BaseController {
      * @return page
      */
     @RequestMapping("/token/manager")
-    @PreAuthorize("admin")
+//    @PreAuthorize("admin")
     public String managerToken(HttpServletRequest request) {
         return "tokensManager";
     }
@@ -76,11 +77,16 @@ public class TokenController extends BaseController {
 
         if (result.isFailed()) {
             log.warn("Dispatch token failed. return result: {}", result);
+            return result;
         }
 
         result = serverService.addToResultQueue(user, key, (TokenInfo.Token) result.get("token"));
         if (result.isFailed()) {
             log.warn("get token in result queue failed. {}", result);
+            serverService.changeStatusOfWaitingRequest(user, key, "failed");
+        } else {
+            log.debug("get token in result queue succeed. {}", key);
+            serverService.changeStatusOfWaitingRequest(user, key, "done");
         }
 
         log.debug("Dispatch token completely");

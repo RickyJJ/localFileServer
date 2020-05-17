@@ -1,0 +1,19 @@
+
+dubbo:
+  application:
+    name: client
+  registry:
+    address: 111.229.29.192:2181
+    protocol: zookeeper
+    check: false
+    timeout: 10000
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  devtools:
+    livereload:
+      port: 35013
+server:
+  servlet:
+    context-path: /client

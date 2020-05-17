@@ -113,6 +113,12 @@
         </resources>
     </build>
 
+    <modules>
+        <module>client</module>
+        <module>server</module>
+        <module>common</module>
+    </modules>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>

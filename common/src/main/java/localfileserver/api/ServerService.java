@@ -56,5 +56,39 @@ public interface ServerService {
      */
     Result addToResultQueue(String userName, String key, TokenInfo.Token token);
 
+    /**
+     * remove token request from result queue.
+     * @param key user key
+     * @return if token request exists and be removed successfully, return true
+     * otherwise return false
+     */
+    boolean removeFromResultQueue(String key);
+
+    /**
+     * find token request in waiting queue,
+     * if a token request was rejected by admin, then status of
+     * the token request is failed, or waiting for further handle.
+     * @param name user name
+     * @param key user key
+     * @return result of token request is waiting or handled
+     */
+    Result findFromWaitQueue(String name, String key);
+
+    /**
+     * find token request in waiting queue, and change status of it
+     * @param user user
+     * @param key user key
+     * @param status token request status
+     */
+    void changeStatusOfWaitingRequest(String user, String key, String status);
+
+    /**
+     * remove token request from wait queue
+     * @param key user key
+     * @return true for removing token request succeed.
+     */
+    boolean removeFromWaitQueue(String key);
+
+    String test(String user);
 }
 

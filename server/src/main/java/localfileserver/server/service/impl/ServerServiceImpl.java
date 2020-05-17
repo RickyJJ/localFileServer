@@ -1,5 +1,6 @@
 package localfileserver.server.service.impl;
 
+import com.alibaba.dubbo.config.annotation.Service;
 import localfileserver.api.ServerService;
 import localfileserver.kit.StringKit;
 import localfileserver.model.Result;
@@ -11,7 +12,6 @@ import localfileserver.server.request.TokenRequestManager;
 import localfileserver.server.service.TokenService;
 import localfileserver.token.HandleToken;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 import java.util.Objects;
 
@@ -24,7 +24,7 @@ import static localfileserver.protobuf.TokenInfo.Token.TokenType.forNumber;
  * @author Mr.Jiong
  */
 @Slf4j
-@Service
+@Service(interfaceClass = ServerService.class)
 public class ServerServiceImpl implements ServerService {
     private final TokenService tokenService;
 
@@ -107,8 +107,12 @@ public class ServerServiceImpl implements ServerService {
 
     @Override
     public Result findFromResultQueue(String userName, String key) {
-        return null;
+        TokenRequest tokenRequest = TokenRequestManager.findInQueue(userName, key);
+
+        return tokenRequest == null ? Result.fail("2001", "No token found in Result queue")
+                : Result.ok().add("token", tokenRequest.getToken()).add("key", key);
     }
+
     @Override
     public Result addToResultQueue(String userName, String key, TokenInfo.Token token) {
         TokenRequest tokenRequest = new TokenRequest();
@@ -129,4 +133,82 @@ public class ServerServiceImpl implements ServerService {
         }
     }
 
+    @Override
+    public boolean removeFromResultQueue(String key) {
+        TokenRequest tokenRequest = TokenRequestManager.removeFromQueue(key);
+
+        if (tokenRequest == null) {
+            log.warn("token request for key[{}] not found in queue", key);
+            return false;
+        }
+
+        log.debug("removing token request from queue completely.");
+        return true;
+    }
+
+    /**
+     * find token request in waiting queue,
+     * if a token request was rejected by admin, then status of
+     * the token request is failed, or waiting for further handle.
+     *
+     * @param name user name
+     * @param key  user key
+     * @return result of token request is waiting or handled
+     */
+    @Override
+    public Result findFromWaitQueue(String name, String key) {
+        TokenRequest tokenRequest = TokenRequestManager.findInWaitQueue(key);
+
+        if (tokenRequest == null) {
+            return Result.fail("2002", "Token request not found");
+        }
+
+        if ("wait".equals(tokenRequest.getStatus()) || "done".equals(tokenRequest.getStatus())) {
+            return Result.ok();
+        } else if ("canceled".equals(tokenRequest.getStatus())) {
+            return Result.fail("2003", "Token request is canceled.");
+        }
+        return Result.fail("2009", "unknown token request status.");
+    }
+
+    /**
+     * remove token request from wait queue
+     *
+     * @param key user key
+     * @return token request to remove
+     */
+    @Override
+    public boolean removeFromWaitQueue(String key) {
+        TokenRequest tokenRequest = TokenRequestManager.removeFromWaitQueue(key);
+
+        if (tokenRequest == null) {
+            log.warn("token request not found in wait queue. key: {}", key);
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public String test(String user) {
+        return "Hello " + user +", RPC is here it.";
+    }
+
+    /**
+     * find token request in waiting queue, and change status of it
+     *
+     * @param user   user
+     * @param key    user key
+     * @param status token request status
+     */
+    @Override
+    public void changeStatusOfWaitingRequest(String user, String key, String status) {
+        TokenRequest inWaitQueue = TokenRequestManager.findInWaitQueue(key);
+
+        if (inWaitQueue == null) {
+            log.warn("token request in waiting queue not found. key: {}", key);
+            return;
+        }
+        inWaitQueue.setStatus(status);
+    }
 }

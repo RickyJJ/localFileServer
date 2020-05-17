@@ -1,12 +1,19 @@
 package localfileserver.server;
 
+import com.alibaba.dubbo.config.spring.context.annotation.EnableDubbo;
+import com.alibaba.dubbo.config.spring.context.annotation.EnableDubboConfig;
+import localfileserver.server.service.impl.ServerServiceImpl;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+/**
+ * @author Administrator
+ */
 @SpringBootApplication
+@EnableDubbo(scanBasePackages = {"localfileserver.server.service.impl"})
 public class ServerApplication implements ApplicationContextAware {
     private static ApplicationContext applicationContext;
     public static void main(String[] args) {

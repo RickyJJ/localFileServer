@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Mr.Jiong
@@ -62,13 +63,13 @@ public class User {
         byte[] bytes = Base64Utils.decodeFromString(token);
         String tokenJson = new String(bytes, StandardCharsets.UTF_8);
         ObjectMapper objectMapper = new ObjectMapper();
-        Map parse = null;
+        Map<String, Object> parse;
         try {
+            //noinspection unchecked
             parse = objectMapper.readValue(tokenJson, HashMap.class);
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("wrong token json");
         }
-//        JSONObject parse = (JSONObject) JSONObject.parse(tokenJson);
 
         TokenInfo.Token.Builder builder = TokenInfo.Token.newBuilder();
         builder.setValue((String) parse.get("value"));

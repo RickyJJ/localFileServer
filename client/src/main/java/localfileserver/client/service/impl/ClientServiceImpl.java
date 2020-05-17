@@ -29,25 +29,12 @@ public class ClientServiceImpl extends BaseService implements ClientService {
     public Result applyToken(User user) {
         try {
 
-            Map<String, String> result = HttpKit.post(AppConst.SERVER_URL + "applyToken", MapKit.map("user", user.getName()));
+            Result result = serverService.applyToken(user.getName());
             log.info("{} apply token result: {}", user.getName(), result);
-            if (result != null) {
-                String code = result.get("code");
-                if (code != null) {
-                    if (isSucc(code)) {
-                        return Result.ok();
-                    } else {
-                        return Result.fail(code, result.getOrDefault("msg", ""));
-                    }
-                } else {
-                    return Result.fail("0", "No message");
-                }
-            } else {
-                return Result.fail("0", "No Response");
-            }
+            return result;
         } catch (Exception e) {
             log.warn("apply token failed", e);
-            return Result.fail("0", "apply failed");
+            return Result.fail("5000", "apply failed");
         }
     }
 
@@ -59,11 +46,20 @@ public class ClientServiceImpl extends BaseService implements ClientService {
         Result result = serverService.findFromResultQueue(user.getName(), key);
 
         if (result.isFailed()) {
-            log.warn("Fetching token failed.");
+            result = serverService.findFromWaitQueue(user.getName(), key);
+
+            if (result.isFailed()) {
+                log.warn("Token apply failed. {}", result.getMessage());
+            } else {
+                log.info("Token request is waiting to handle.");
+            }
             return result;
+        } else {
+            serverService.removeFromResultQueue(key);
+            serverService.removeFromWaitQueue(key);
         }
 
         log.debug("fetch token succeed.");
-        return Result.ok().add("token", result.get("token"));
+        return result;
     }
 }
