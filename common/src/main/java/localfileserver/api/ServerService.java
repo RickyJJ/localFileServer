@@ -14,33 +14,10 @@ import localfileserver.protobuf.TokenInfo;
 public interface ServerService {
     /**
      * handle request from ip address for apply token with user name
-     * @param ipAddr ip address of client
      * @param userName user name
      * @return handle result. If success then return success with a key, or fail
      */
-    Result applyToken(String ipAddr, String userName);
-
-    /**
-     * add apply result to a result queue, then client can fetch result of apply token
-     * from it
-     * @param ipAddr client ip address
-     * @param userName client user name
-     * @param key a key returned from server when applying succeed
-     * @param token token dispatched for the client
-     * @return handle result
-     */
-    Result addToResultQueue(String ipAddr, String userName, String key, TokenInfo.Token token);
-
-    /**
-     * find token in result array and return it to client
-     * token has a time limit in result array, if timeout then token will be removed from
-     * result array
-     * @param ipAddr client ip address
-     * @param userName client user name
-     * @param key client key
-     * @return result with token if token exist
-     */
-    Result findFromResultQueue(String ipAddr, String userName, String key);
+    Result applyToken(String userName);
 
     /**
      * check user's key is valid or not.
@@ -49,5 +26,35 @@ public interface ServerService {
      * @return boolean true for user's key is valid
      */
     boolean checkUserApply(String user, String key);
+
+    /**
+     * find token in result array and return it to client
+     * token has a time limit in result array, if timeout then token will be removed from
+     * result array
+     * @param userName client user name
+     * @param key client key
+     * @return result with token if token exist
+     */
+    Result findFromResultQueue(String userName, String key);
+
+    /**
+     * Get a token by specified token type
+     *
+     * if tokens are not enough, then create a new token
+     * @param tokenType token type, forever or temporal
+     * @return result
+     */
+    Result createToken(String tokenType);
+
+    /**
+     * add apply result to a result queue, then client can fetch result of apply token
+     * from it
+     * @param userName client user name
+     * @param key a key returned from server when applying succeed
+     * @param token token dispatched for the client
+     * @return handle result
+     */
+    Result addToResultQueue(String userName, String key, TokenInfo.Token token);
+
 }
 

@@ -1,0 +1,132 @@
+package localfileserver.server.service.impl;
+
+import localfileserver.api.ServerService;
+import localfileserver.kit.StringKit;
+import localfileserver.model.Result;
+import localfileserver.protobuf.TokenInfo;
+import localfileserver.server.kit.Encrypt;
+import localfileserver.server.manager.TokensManager;
+import localfileserver.server.request.TokenRequest;
+import localfileserver.server.request.TokenRequestManager;
+import localfileserver.server.service.TokenService;
+import localfileserver.token.HandleToken;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.Objects;
+
+import static localfileserver.protobuf.TokenInfo.Token.TokenType;
+import static localfileserver.protobuf.TokenInfo.Token.TokenType.forNumber;
+
+/**
+ * impl for IServerService
+ *
+ * @author Mr.Jiong
+ */
+@Slf4j
+@Service
+public class ServerServiceImpl implements ServerService {
+    private final TokenService tokenService;
+
+    public ServerServiceImpl(TokenService tokenService) {
+        this.tokenService = tokenService;
+    }
+
+    /**
+     * a request from the client applying for a new token
+     * a user could apply it for many times but one apply is illegal at a time
+     * <p>
+     * <p>
+     * Server will handle it and give a result immediately which not presents
+     * a new token is dispatched to the client, but just a key to get the token
+     * Then Server operator will decide is or not to dispatch the token to the client manually.
+     *
+     * @return result with a key, which is necessary to fetch token for the client.
+     */
+    @Override
+    public Result applyToken(String user) {
+        Result result = Result.ok();
+        // could add some extern validation
+        String key = new Encrypt().encode(user);
+        if (result.isOk()) {
+            result = tokenService.addToWaitQueue(user, key);
+
+            log.debug("Now get in waiting queue for dispatch token for user {}  by admin", user);
+            return result;
+        } else {
+            log.info("User apply failed: {}", result);
+        }
+        return Result.ok();
+    }
+
+    @Override
+    public Result createToken(String tokenType) {
+        log.debug("token type is {}", tokenType);
+        if (StringKit.isEmpty(tokenType)) {
+            log.warn("toke type is null");
+            return Result.fail("0001", "Token type is null");
+        }
+
+        int tokenTypeInt;
+        try {
+            tokenTypeInt = Integer.parseInt(tokenType);
+        } catch (NumberFormatException e) {
+            log.warn("token type can not be parsed to int: {}", tokenType);
+            tokenTypeInt = -1;
+        }
+
+        TokenType type = forNumber(tokenTypeInt);
+        if (type == null) {
+            return Result.fail("1001", "Token type is wrong.");
+        }
+
+        HandleToken token;
+        switch (type) {
+            case FOREVER:
+                token = TokensManager.newToken();
+                break;
+            case TEMP:
+                token = TokensManager.newToken(true);
+                break;
+            default:
+                token = null;
+        }
+
+        if (token == null) {
+            return Result.fail("1002", "Create token failed");
+        }
+        log.debug("Get token: {}", token);
+        return Result.ok().add("token", token);
+    }
+
+    @Override
+    public boolean checkUserApply(String user, String key) {
+        String encode = new Encrypt().encode(user);
+        return Objects.equals(encode, key);
+    }
+
+    @Override
+    public Result findFromResultQueue(String userName, String key) {
+        return null;
+    }
+    @Override
+    public Result addToResultQueue(String userName, String key, TokenInfo.Token token) {
+        TokenRequest tokenRequest = new TokenRequest();
+        tokenRequest.setUserName(userName);
+        tokenRequest.setKey(key);
+        tokenRequest.setToken(token);
+
+        boolean b = TokenRequestManager.addToQueue(tokenRequest);
+        if (b) {
+            return Result.ok();
+        } else if (TokenRequestManager.isFull()) {
+            log.warn("Request array is full, adding new request failed");
+            return Result.fail("Token apply is full");
+
+        } else {
+            log.warn("unknown error happened. adding new request failed.");
+            return Result.fail("Add token to waiting array failed");
+        }
+    }
+
+}

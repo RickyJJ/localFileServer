@@ -1,9 +1,9 @@
 package localfileserver.client.controller;
 
 import localfileserver.client.entity.User;
-import localfileserver.client.entity.UserFactory;
 import localfileserver.client.kit.SessionKit;
-import localfileserver.common.AppConst;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -72,16 +72,12 @@ abstract class BaseController {
     }
 
     protected User getCurrentUser() {
-        User currentUser = (User) getSessionAttr(AppConst.CURRENT_USER);
+        SecurityContext context = SecurityContextHolder.getContext();
 
-        if (currentUser == null) {
-
-//            String ipAddress = HttpKit.getIpAddress();
-            // todo load user info
-            String ipAddress = null;
-            currentUser = UserFactory.load(ipAddress);
+        if (context != null) {
+            return ((User) context.getAuthentication());
         }
 
-        return currentUser;
+        return null;
     }
 }

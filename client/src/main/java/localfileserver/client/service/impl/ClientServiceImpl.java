@@ -1,5 +1,7 @@
 package localfileserver.client.service.impl;
 
+import com.alibaba.dubbo.config.annotation.Reference;
+import localfileserver.api.ServerService;
 import localfileserver.client.entity.User;
 import localfileserver.client.service.ClientService;
 import localfileserver.common.AppConst;
@@ -20,6 +22,9 @@ import java.util.Map;
 @Slf4j
 @Service
 public class ClientServiceImpl extends BaseService implements ClientService {
+    @Reference
+    private ServerService serverService;
+
     @Override
     public Result applyToken(User user) {
         try {
@@ -50,19 +55,15 @@ public class ClientServiceImpl extends BaseService implements ClientService {
     public Result fetchToken(User user, String key) {
         Map<String, String> user1 = MapKit.map("user", user.getName());
         user1.put("key", key);
-        Map<String, String> result = HttpKit.post(AppConst.SERVER_URL + "/fetchToken", user1);
 
-        if (result == null) {
-            return Result.fail("0", "No Response");
+        Result result = serverService.findFromResultQueue(user.getName(), key);
+
+        if (result.isFailed()) {
+            log.warn("Fetching token failed.");
+            return result;
         }
 
-        String code = result.get("code");
-        if (isSucc(code)) {
-            log.debug("fetch token succeed.");
-            return Result.ok().add("token", result.get("token"));
-        } else {
-            log.warn("fetch token failed: {}", result.get("msg"));
-            return Result.fail("0", result.get("msg"));
-        }
+        log.debug("fetch token succeed.");
+        return Result.ok().add("token", result.get("token"));
     }
 }

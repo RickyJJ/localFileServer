@@ -43,7 +43,7 @@ public class Result {
         return fail(AppConst.FAIL, msg);
     }
 
-    public Result add(String key, String value) {
+    public Result add(String key, Object value) {
         if (data == null) {
             data = new HashMap<>();
         }
