@@ -14,9 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
@@ -57,16 +55,20 @@ public class TreeController extends BaseController {
         return redirectTo("/files");
     }
 
-    @RequestMapping("/files")
-    public String listFiles() {
+    @GetMapping("/files")
+    @ResponseBody
+    public Result listFiles() {
         String dir = directoryProperties.getDir();
+        Result result = Result.ok();
 
         log.debug("dir: {}", dir);
         List<FileItem> fileList = fileListService.listFiles(dir, FileListService.DESCEND);
-        setAttr("files", fileList);
-        setAttr("isRoot", Boolean.TRUE);
-        return "main";
+
+        result.add("files", fileList);
+        result.add("isRoot", Boolean.TRUE);
+        return result;
     }
+
 
     @RequestMapping("/files/**")
     public String goDir(HttpServletRequest request) {
@@ -92,6 +94,7 @@ public class TreeController extends BaseController {
     }
 
     @RequestMapping(value = "/fileUpload", method = RequestMethod.POST)
+    @CrossOrigin
     public String fileUpload(@RequestParam("file") MultipartFile file) {
         String name = file.getOriginalFilename();
         if (Objects.isNull(name)) {
@@ -120,6 +123,7 @@ public class TreeController extends BaseController {
     }
 
     @RequestMapping("/download/**")
+    @CrossOrigin
     public Object downloadFile(HttpServletRequest request) throws UnsupportedEncodingException {
         String filePath = request.getRequestURI().substring("/download/".length());
         filePath = URLDecoder.decode(filePath, "UTF-8");

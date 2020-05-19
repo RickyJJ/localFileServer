@@ -75,4 +75,8 @@ public class Result {
     public String getMessage() {
         return message;
     }
+
+    public Map<String, Object> getData() {
+        return data;
+    }
 }
