@@ -2,15 +2,15 @@
     <div id="app">
         <div class="title"><h1>Files Presentation</h1></div>
         <FileList/>
-    </div>
-    <div class="fix-bottom" style="text-align: center">
-        <form action="/fileUpload" method="post" enctype="multipart/form-data">
-            <div>
-                <div class="btn-upload">Click to Upload File(Drag file to here)
-                    <input type="file" class="file-hidden" name="file" onchange="submitFile(this.value)">
+        <div class="fix-bottom" style="text-align: center">
+            <form action="/fileUpload" method="post" enctype="multipart/form-data">
+                <div>
+                    <div class="btn-upload">Click to Upload File(Drag file to here)
+                        <input type="file" class="file-hidden" name="file" onchange="submitFile(this.value)">
+                    </div>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 </template>
 

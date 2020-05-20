@@ -1,7 +1,7 @@
 <template>
     <div class="mainContainer">
         <ul class="fileTree">
-            <li v-if="!isRoot"><a v-bind:href="WebConfig.ctx + '/files/#(parentPath)'">..</a></li>
+            <li v-if="!isRoot"><a v-bind:href="this.CONTEXT.path('/files/#(parentPath)')">..</a></li>
             <template v-else>
                 <li v-for="file of files" :key="file.name">
                     <a v-bind:href="fileHref(file)">{{file.name}}{{file.isDir ? '&nbsp;->' : ''}}</a>
@@ -16,7 +16,6 @@
 </template>
 
 <script>
-    import WebConfig from "../config/WebConfig";
     export default {
         name: "FileList",
         data() {
@@ -28,7 +27,7 @@
         methods: {
             fileHref: function (file) {
                 let s = file.dir ? ('files/' + file.name) : ('download/' + file.path);
-                return WebConfig.ctx + s
+                return this.CONTEXT.path(s)
             },
         },
         created() {
