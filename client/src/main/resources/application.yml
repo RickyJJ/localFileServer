@@ -14,6 +14,11 @@ spring:
   devtools:
     livereload:
       port: 35013
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+
 server:
   servlet:
     context-path: /client
