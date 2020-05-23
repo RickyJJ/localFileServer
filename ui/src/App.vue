@@ -3,10 +3,10 @@
         <div class="title"><h1>Files Presentation</h1></div>
         <FileList/>
         <div class="fix-bottom" style="text-align: center">
-            <form action="/fileUpload" method="post" enctype="multipart/form-data">
+            <form v-bind:action="this.CONTEXT.path('fileUpload')" method="post" enctype="multipart/form-data">
                 <div>
                     <div class="btn-upload">Click to Upload File(Drag file to here)
-                        <input type="file" class="file-hidden" name="file" onchange="submitFile(this.value)">
+                        <input type="file" class="file-hidden" name="file" v-on:change="submitFile()">
                     </div>
                 </div>
             </form>
@@ -21,6 +21,18 @@
         name: 'App',
         components: {
             FileList
+        },
+        methods: {
+            submitFile () {
+                let form = document.forms[0];
+                let filePath = form.file.value;
+                if (filePath && filePath.length > 0) {
+                    if (confirm("Upload This file?")) {
+                        form.submit();
+                    }
+                    form.reset();
+                }
+            }
         }
     }
 </script>

@@ -94,7 +94,6 @@ public class TreeController extends BaseController {
     }
 
     @RequestMapping(value = "/fileUpload", method = RequestMethod.POST)
-    @CrossOrigin
     public String fileUpload(@RequestParam("file") MultipartFile file) {
         String name = file.getOriginalFilename();
         if (Objects.isNull(name)) {
