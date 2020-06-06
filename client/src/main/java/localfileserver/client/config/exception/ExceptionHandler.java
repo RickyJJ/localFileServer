@@ -23,6 +23,7 @@ public class ExceptionHandler {
     @org.springframework.web.bind.annotation.ExceptionHandler(Exception.class)
     @ResponseBody
     public Object globalExceptionHandler(HttpServletRequest request, Exception e, HandlerMethod method) {
+        log.error("Caught Exception.", e);;
         if (isAjax(method)) {
             Map<String, Object> map = new HashMap<>();
             map.put("code", "0");

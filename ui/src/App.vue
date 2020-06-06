@@ -1,6 +1,7 @@
 <template>
     <div id="app">
         <div class="title"><h1>Files Presentation</h1></div>
+        <token-section/>
         <FileList/>
         <div class="fix-bottom" style="text-align: center">
             <form v-bind:action="this.CONTEXT.path('fileUpload')" method="post" enctype="multipart/form-data">
@@ -16,10 +17,12 @@
 
 <script>
     import FileList from './components/FileList'
+    import TokenSection from "./components/tokenSection";
 
     export default {
         name: 'App',
         components: {
+            TokenSection,
             FileList
         },
         methods: {

@@ -7,12 +7,19 @@ import localfileserver.client.service.ClientService;
 import localfileserver.client.service.FileListService;
 import localfileserver.client.service.impl.ClientServiceImpl;
 import localfileserver.model.Result;
+import localfileserver.token.ExpiredHandleToken;
 import localfileserver.token.HandleToken;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,7 +42,7 @@ import java.util.Objects;
  * @author DEV049104
  * @date 2019/12/24
  */
-@Controller
+@RestController
 @Slf4j
 public class TreeController extends BaseController {
     private final DirectoryProperties directoryProperties;
@@ -56,7 +63,6 @@ public class TreeController extends BaseController {
     }
 
     @GetMapping("/files")
-    @ResponseBody
     public Result listFiles() {
         String dir = directoryProperties.getDir();
         Result result = Result.ok();
@@ -213,5 +219,64 @@ public class TreeController extends BaseController {
             return result;
         }
 
+    }
+
+    @PostMapping("/userToken")
+    public Result getUserToken() {
+        User currentUser = getCurrentUser();
+        HandleToken token = currentUser.getToken();
+
+        if (token == null) {
+            return Result.fail("1000", "No token");
+        } else if (!token.isAvailable()) {
+            return Result.fail("1001", "No available token");
+        }
+
+        Result result = Result.ok();
+        String tokenExpireDate = token.isTemporal() ? ((ExpiredHandleToken) token).getExpiredTime().toString() : "长期";
+
+        result.add("tokenExpireDate", tokenExpireDate);
+        result.add("tokenType", token.isTemporal() ? "2" : "1");
+        return result;
+    }
+
+    @GetMapping("/test")
+    public String testMsg() {
+        log.info("access to method.");
+        return "test message";
+    }
+
+    /**
+     * 更新用户权限
+     * @return result
+     */
+    @GetMapping("test/get/authority")
+    public Result testAuthority() {
+        SecurityContext context = SecurityContextHolder.getContext();
+        Authentication authentication = context.getAuthentication();
+
+        log.info("authentication: {}", authentication);
+        if (authentication instanceof UsernamePasswordAuthenticationToken) {
+            UsernamePasswordAuthenticationToken userToken
+                    = new UsernamePasswordAuthenticationToken(authentication.getPrincipal(),
+                    authentication.getCredentials(),
+                    AuthorityUtils.createAuthorityList("download"));
+
+            SecurityContext newContext = SecurityContextHolder.createEmptyContext();
+            userToken.setDetails("Token");
+            newContext.setAuthentication(userToken);
+            // 更新Session中的context，后续请求能够直接通过SecurityContextPersistenceFilter
+            // 从session中获取相同的context
+            setSessionAttr(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, newContext);
+        }
+
+        return Result.ok();
+    }
+
+    @GetMapping("test/authenticate")
+    @PreAuthorize("hasAuthority('download')")
+    public Result testAuth() {
+        log.info("Yes, has download role");
+        return Result.ok();
     }
 }
