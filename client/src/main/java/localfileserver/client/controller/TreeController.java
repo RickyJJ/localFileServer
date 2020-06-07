@@ -15,13 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.AuthorityUtils;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -256,37 +249,4 @@ public class TreeController extends BaseController {
         return "test message";
     }
 
-    /**
-     * 更新用户权限
-     * @return result
-     */
-    @GetMapping("test/get/authority")
-    public Result testAuthority() {
-        SecurityContext context = SecurityContextHolder.getContext();
-        Authentication authentication = context.getAuthentication();
-
-        log.info("authentication: {}", authentication);
-        if (authentication instanceof UsernamePasswordAuthenticationToken) {
-            UsernamePasswordAuthenticationToken userToken
-                    = new UsernamePasswordAuthenticationToken(authentication.getPrincipal(),
-                    authentication.getCredentials(),
-                    AuthorityUtils.createAuthorityList("download"));
-
-            SecurityContext newContext = SecurityContextHolder.createEmptyContext();
-            userToken.setDetails("Token");
-            newContext.setAuthentication(userToken);
-            // 更新Session中的context，后续请求能够直接通过SecurityContextPersistenceFilter
-            // 从session中获取相同的context
-            setSessionAttr(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, newContext);
-        }
-
-        return Result.ok();
-    }
-
-    @GetMapping("test/authenticate")
-    @PreAuthorize("hasAuthority('download')")
-    public Result testAuth() {
-        log.info("Yes, has download role");
-        return Result.ok();
-    }
 }
