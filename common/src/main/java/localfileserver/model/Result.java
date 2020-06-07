@@ -3,13 +3,17 @@ package localfileserver.model;
 import localfileserver.common.AppConst;
 import localfileserver.kit.StringKit;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * @author Mr.Jiong
  */
-public class Result {
+public class Result implements Serializable {
+
+    private static final long serialVersionUID = -5842231463476197663L;
+
     private String flag;
 
     private String message;

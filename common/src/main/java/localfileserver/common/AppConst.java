@@ -13,4 +13,7 @@ public interface AppConst {
 
     String SERVER_URL = "";
     int HTTP_TIME_OUT = 30;
+
+    String TOKEN_APPLY_KEY = "token_key";
+    String TOKEN_REQUEST = "token_request";
 }

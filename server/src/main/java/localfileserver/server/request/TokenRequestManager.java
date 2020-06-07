@@ -1,8 +1,10 @@
 package localfileserver.server.request;
 
-import lombok.EqualsAndHashCode;
+import localfileserver.entity.TokenRequest;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -65,6 +67,15 @@ public class TokenRequestManager {
         return target;
     }
 
+    public static TokenRequest findSameRequestInWaitQueue(String userName) {
+        for (TokenRequest tokenRequest : WAITING) {
+            if (Objects.equals(tokenRequest.getUserName(), userName)) {
+                return tokenRequest;
+            }
+        }
+        return null;
+    }
+
     public static TokenRequest findInWaitQueue(String key) {
         for (TokenRequest tokenRequest : WAITING) {
             if (Objects.equals(tokenRequest.getKey(), key)) {
@@ -86,5 +97,9 @@ public class TokenRequestManager {
             WAITING.remove(target);
         }
         return target;
+    }
+
+    public static List<TokenRequest> getTokenRequests() {
+        return new ArrayList<>(WAITING);
     }
 }

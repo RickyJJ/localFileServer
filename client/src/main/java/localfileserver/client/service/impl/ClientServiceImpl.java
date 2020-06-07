@@ -4,8 +4,6 @@ import com.alibaba.dubbo.config.annotation.Reference;
 import localfileserver.api.ServerService;
 import localfileserver.client.entity.User;
 import localfileserver.client.service.ClientService;
-import localfileserver.common.AppConst;
-import localfileserver.kit.HttpKit;
 import localfileserver.kit.MapKit;
 import localfileserver.model.Result;
 import localfileserver.service.BaseService;
@@ -28,9 +26,12 @@ public class ClientServiceImpl extends BaseService implements ClientService {
     @Override
     public Result applyToken(User user) {
         try {
-
             Result result = serverService.applyToken(user.getName());
             log.info("{} apply token result: {}", user.getName(), result);
+
+            if (result == null) {
+                result = Result.fail("1101", "Remote service not found");
+            }
             return result;
         } catch (Exception e) {
             log.warn("apply token failed", e);

@@ -1,8 +1,11 @@
 package localfileserver.api;
 
 
+import localfileserver.entity.TokenRequest;
 import localfileserver.model.Result;
 import localfileserver.protobuf.TokenInfo;
+
+import java.util.List;
 
 /**
  * define method for server
@@ -90,5 +93,13 @@ public interface ServerService {
     boolean removeFromWaitQueue(String key);
 
     String test(String user);
+
+    /**
+     * get token request queue from server
+     * @return list of token request
+     */
+    List<TokenRequest> getTokenRequests();
+
+    Result rejectTokenApply(String user, String key);
 }
 

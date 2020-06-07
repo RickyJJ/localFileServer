@@ -8,7 +8,7 @@ import localfileserver.token.ExpireHandleTokenWrapper;
 import localfileserver.token.HandleToken;
 import localfileserver.token.HandleTokenWrapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,16 +19,25 @@ import java.io.IOException;
  * @author Mr.Jiong
  */
 @Slf4j
+@Component
 public class UserFactory {
 
-    @Autowired
     private static DirectoryProperties directoryProperties;
+
+    private UserFactory(DirectoryProperties directoryProperties) {
+        UserFactory.directoryProperties = directoryProperties;
+    }
 
     private static final String USER_FILE_SUFFIX = ".data";
 
+    /**
+     * 从本地加载用户信息，一定返回非NULL，否则抛出异常
+     * @param uniqueKey 表明用户唯一性的标识，一般是IP
+     * @return user
+     */
     public static User load(String uniqueKey) {
         String userFile = TokenKit.encode(uniqueKey);
-        File file = new File(directoryProperties.getDir() + File.pathSeparator + userFile + USER_FILE_SUFFIX);
+        File file = new File(directoryProperties.getDir() + File.separator + userFile + USER_FILE_SUFFIX);
 
         boolean userNew = false;
         if (!file.exists()) {

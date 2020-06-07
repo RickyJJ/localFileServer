@@ -26,16 +26,18 @@
             }
         },
         created() {
-            // this.$http.post('userToken').then(function (response) {
-            //     this.hasToken = response.status == '200' && response.body.flag == '1';
-            // });
+            this.$http.get('userToken').then(function (response) {
+                if (response.body.flag == '1') {
+                    this.hasToken = true;
+                    this.tokenType = response.body.tokenType;
+                    this.tokenExpireDate = response.body.tokenExpireDate;
+                }
+            });
         },
         methods: {
             applyToken() {
-                this.$http.get('test/get/authority').then(function (response) {
+                this.$http.get('token/apply').then(function (response) {
                     if (response.body.flag == '1') {
-                        // this.tokenType = response.body.tokenType;
-                        // this.tokenExpireDate = response.body.tokenExpireDate;
                         alert('apply succeed.');
                     } else {
                         alert(response.body.msg);
@@ -43,7 +45,7 @@
                 });
             },
             testToken() {
-                this.$http.get('test/authenticate').then(function (response) {
+                this.$http.get('user/checkDownload').then(function (response) {
                     if (response.body.flag == 1) {
 
                         this.tokenType = 1;

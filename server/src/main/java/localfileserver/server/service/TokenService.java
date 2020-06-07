@@ -8,9 +8,6 @@ import localfileserver.model.Result;
  */
 public interface TokenService {
 
-
-
-
     /**
      * add a result of applying request  to a waiting queue, request result is waiting to be handled
      * by the admin.

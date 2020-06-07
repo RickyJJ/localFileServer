@@ -33,7 +33,9 @@ public class CustomSecurityFilter extends AbstractAuthenticationProcessingFilter
         this.setAuthenticationManager(getProviderManager(new CustomAuthProvider()));
         this.trustResolver = new AuthenticationTrustResolverImpl();
         this.setAuthenticationSuccessHandler((request, response, authentication) -> {
-            log.info("ignore");
+            if (log.isDebugEnabled()) {
+                log.info("ignore");
+            }
         });
         this.setContinueChainBeforeSuccessfulAuthentication(true);
     }

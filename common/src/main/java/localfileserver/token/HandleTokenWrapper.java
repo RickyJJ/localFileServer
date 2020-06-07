@@ -22,6 +22,7 @@ public class HandleTokenWrapper implements HandleToken {
 
         long lastTime = token.getLastTime();
         this.token.setExpireDate(lastTime == 0 ? null : Instant.ofEpochMilli(lastTime));
+
     }
 
     public static HandleToken newInstance(TokenInfo.Token token) {
@@ -37,7 +38,7 @@ public class HandleTokenWrapper implements HandleToken {
 
     @Override
     public boolean isAvailable() {
-        return token != null;
+        return token != null && token.isValid();
     }
 
     public static HandleToken toHandleToken(TokenInfo.Token token) {

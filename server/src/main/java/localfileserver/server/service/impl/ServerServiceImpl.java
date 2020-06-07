@@ -2,17 +2,19 @@ package localfileserver.server.service.impl;
 
 import com.alibaba.dubbo.config.annotation.Service;
 import localfileserver.api.ServerService;
+import localfileserver.common.AppConst;
+import localfileserver.entity.TokenRequest;
 import localfileserver.kit.StringKit;
 import localfileserver.model.Result;
 import localfileserver.protobuf.TokenInfo;
 import localfileserver.server.kit.Encrypt;
 import localfileserver.server.manager.TokensManager;
-import localfileserver.server.request.TokenRequest;
 import localfileserver.server.request.TokenRequestManager;
 import localfileserver.server.service.TokenService;
 import localfileserver.token.HandleToken;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
 import java.util.Objects;
 
 import static localfileserver.protobuf.TokenInfo.Token.TokenType;
@@ -39,7 +41,7 @@ public class ServerServiceImpl implements ServerService {
      * <p>
      * Server will handle it and give a result immediately which not presents
      * a new token is dispatched to the client, but just a key to get the token
-     * Then Server operator will decide is or not to dispatch the token to the client manually.
+     * Then Server operator will decide whether to dispatch the token to the client manually or not.
      *
      * @return result with a key, which is necessary to fetch token for the client.
      */
@@ -49,6 +51,10 @@ public class ServerServiceImpl implements ServerService {
         // could add some extern validation
         String key = new Encrypt().encode(user);
         if (result.isOk()) {
+            TokenRequest inWaitQueue = TokenRequestManager.findInWaitQueue(key);
+            if (inWaitQueue != null) {
+                TokenRequestManager.removeFromWaitQueue(key);
+            }
             result = tokenService.addToWaitQueue(user, key);
 
             log.debug("Now get in waiting queue for dispatch token for user {}  by admin", user);
@@ -161,14 +167,9 @@ public class ServerServiceImpl implements ServerService {
 
         if (tokenRequest == null) {
             return Result.fail("2002", "Token request not found");
+        } else {
+            return Result.ok().add(AppConst.TOKEN_REQUEST, tokenRequest);
         }
-
-        if ("wait".equals(tokenRequest.getStatus()) || "done".equals(tokenRequest.getStatus())) {
-            return Result.ok();
-        } else if ("canceled".equals(tokenRequest.getStatus())) {
-            return Result.fail("2003", "Token request is canceled.");
-        }
-        return Result.fail("2009", "unknown token request status.");
     }
 
     /**
@@ -191,7 +192,25 @@ public class ServerServiceImpl implements ServerService {
 
     @Override
     public String test(String user) {
-        return "Hello " + user +", RPC is here it.";
+        return "Hello " + user + ", RPC is here it.";
+    }
+
+    @Override
+    public List<TokenRequest> getTokenRequests() {
+        return TokenRequestManager.getTokenRequests();
+    }
+
+    @Override
+    public Result rejectTokenApply(String user, String key) {
+        TokenRequest requestFromWaitQueue = TokenRequestManager.findSameRequestInWaitQueue(user);
+        if (requestFromWaitQueue == null) {
+            return Result.fail("1108", "Not found in wait queue");
+        }
+
+        TokenRequestManager.removeFromWaitQueue(requestFromWaitQueue.getKey());
+        requestFromWaitQueue.setStatus("canceled");
+        TokenRequestManager.addToQueue(requestFromWaitQueue);
+        return Result.ok();
     }
 
     /**

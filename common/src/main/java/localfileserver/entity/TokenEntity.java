@@ -20,6 +20,10 @@ public class TokenEntity {
     private Instant expireDate;
 
     public boolean isValid() {
+        if (value == null || value.trim().length() == 0) {
+            return false;
+        }
+
         switch (type) {
             case FOREVER:
                 return true;
