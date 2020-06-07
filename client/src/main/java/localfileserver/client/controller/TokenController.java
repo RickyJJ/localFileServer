@@ -2,16 +2,15 @@ package localfileserver.client.controller;
 
 import com.alibaba.dubbo.config.annotation.Reference;
 import localfileserver.api.ServerService;
+import localfileserver.entity.TokenRequest;
 import localfileserver.model.Result;
 import localfileserver.protobuf.TokenInfo;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -25,7 +24,7 @@ import javax.servlet.http.HttpServletRequest;
  * @author Mr.Jiong
  */
 @Slf4j
-@Controller
+@RestController
 //@PreAuthorize("admin")
 public class TokenController extends BaseController {
 
@@ -45,6 +44,15 @@ public class TokenController extends BaseController {
         return "tokensManager";
     }
 
+    @GetMapping("tokenRequests")
+    public Result getTokenRequest() {
+        List<TokenRequest> tokenRequest = serverService.getTokenRequests();
+
+        if (tokenRequest == null) {
+            return Result.fail("1107", "Failed to get token request");
+        }
+        return Result.ok().add("list", tokenRequest);
+    }
     /**
      * The server operator dispatch a new token for the request of a user.
      * To a certain request for token, manager could choose to dispatch a new token to the user or just ignore it.
@@ -55,12 +63,17 @@ public class TokenController extends BaseController {
      *
      * @return result include token if promise action is success, or failed msg
      */
-    @RequestMapping("/token/dispatch")
-    @ResponseBody
-    public Result adminDispatchToken() {
-        String user = (String) getAttr("user");
-        String key = (String) getAttr("key");
-        String tokenType = (String) getAttr("tokenType");
+    @PostMapping("/token/dispatch")
+    public Result adminDispatchToken(@RequestBody Map<String, Object> name1) {
+        log.info("name: {}", name1);
+        String user = (String) name1.get("userName");
+        String key = (String) name1.get("key");
+        String tokenType = (String) name1.get("tokenType");
+
+        if ("2".equals(tokenType)) {
+            // 拒绝
+            return serverService.rejectTokenApply(user, key);
+        }
 
         String name = TokenInfo.Token.TokenType.valueOf(tokenType).name();
 

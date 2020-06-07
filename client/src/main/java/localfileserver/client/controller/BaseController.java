@@ -1,7 +1,9 @@
 package localfileserver.client.controller;
 
 import localfileserver.client.entity.User;
+import localfileserver.client.entity.UserFactory;
 import localfileserver.client.kit.SessionKit;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -16,7 +18,10 @@ import java.util.Objects;
  * @author DEV049104
  * @date 2019/12/25
  */
+@Slf4j
 abstract class BaseController {
+
+    private static final String USER_OBJ = "USER_OBJECT";
 
     protected HttpServletRequest getRequest() {
         return ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
@@ -69,13 +74,22 @@ abstract class BaseController {
         return "forward:" + url;
     }
 
+    /**
+     * Get user info from session or load user info if null in session
+     * @return user info
+     */
     protected User getCurrentUser() {
-//        SecurityContext context = SecurityContextHolder.getContext();
-//
-//        if (context != null) {
-//            return ((User) context.getAuthentication());
-//        }
+        User user = (User) SessionKit.getSession().getAttribute(USER_OBJ);
 
-        return null;
+        if (log.isDebugEnabled()) {
+            log.debug("User exist: {}", user != null);
+        }
+
+        if (user == null) {
+            user = UserFactory.load(getRequest().getRemoteAddr());
+            SessionKit.getSession().setAttribute(USER_OBJ, user);
+        }
+
+        return user;
     }
 }

@@ -1,11 +1,13 @@
 package localfileserver.client.controller;
 
 import localfileserver.client.config.DirectoryProperties;
+import localfileserver.client.config.param.Dict;
 import localfileserver.client.entity.FileItem;
 import localfileserver.client.entity.User;
 import localfileserver.client.service.ClientService;
 import localfileserver.client.service.FileListService;
 import localfileserver.client.service.impl.ClientServiceImpl;
+import localfileserver.common.AppConst;
 import localfileserver.model.Result;
 import localfileserver.token.ExpiredHandleToken;
 import localfileserver.token.HandleToken;
@@ -177,7 +179,7 @@ public class TreeController extends BaseController {
             Result result = clientService.applyToken(currentUser);
             if (result.isOk()) {
                 log.info("Get token key.");
-                setSessionAttr("tokenKey", result.get("key"));
+                setSessionAttr("tokenKey", result.get(AppConst.TOKEN_APPLY_KEY));
             } else {
                 log.info("Token apply failed.");
             }
@@ -193,11 +195,14 @@ public class TreeController extends BaseController {
         }
     }
 
+    /**
+     * 检验用户是否申请token的key，如果有则尝试从远程服务获取token
+     */
     @RequestMapping("/token/check")
     public Result userCheckAndFetchToken() {
         User currentUser = getCurrentUser();
 
-        String tokenKey = (String) getSessionAttr("tokenKey");
+        String tokenKey = (String) getSessionAttr(Dict.Token.TOKEN_KEY);
         if (tokenKey == null) {
             return Result.fail("There is no key to fetch token.");
         } else {
@@ -214,14 +219,19 @@ public class TreeController extends BaseController {
                 log.warn("Fetching token failed. code: {}, msg: {}", result.getFlag(), result.getMessage());
             }
 
-            setSessionAttr("tokenKey", null);
+            setSessionAttr(Dict.Token.TOKEN_KEY, null);
 
             return result;
         }
 
     }
 
-    @PostMapping("/userToken")
+    /**
+     * 获取用户token值
+     * 如果有可用token，则更新用户权限，允许下载文件，否则不允许
+     * @return result
+     */
+    @GetMapping ("/userToken")
     public Result getUserToken() {
         User currentUser = getCurrentUser();
         HandleToken token = currentUser.getToken();
