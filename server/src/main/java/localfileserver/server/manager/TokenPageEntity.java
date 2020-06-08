@@ -1,6 +1,7 @@
 package localfileserver.server.manager;
 
 import com.google.common.base.Strings;
+import localfileserver.kit.TokenKit;
 import localfileserver.protobuf.TokenInfo;
 import localfileserver.protobuf.TokenPool;
 import lombok.extern.slf4j.Slf4j;
@@ -71,6 +72,7 @@ class TokenPageEntity {
             for (int i = 0; i < validCount; i++) {
                 TokenInfo.Token.Builder tokenBuilder = TokenInfo.Token.newBuilder();
                 // ignore set value when init
+                tokenBuilder.setValue(TokenKit.newToken());
                 tokenBuilder.setType(tokenType);
                 tokenBuilder.setIsValid(true);
 
@@ -81,7 +83,8 @@ class TokenPageEntity {
             tokenPage.writeTo(outputStream);
 
             tokenFile = file;
-            size = this.validCount = usedSize = validCount;
+            size = this.validCount = validCount;
+            usedSize = 0;
             page = tokenPage;
             Instant now = Instant.now();
             // 两分钟检测一次token page的被访问情况

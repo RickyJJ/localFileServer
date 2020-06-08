@@ -3,10 +3,10 @@ package localfileserver.server.service.impl;
 import com.alibaba.dubbo.config.annotation.Service;
 import localfileserver.api.ServerService;
 import localfileserver.common.AppConst;
+import localfileserver.entity.TokenEntity;
 import localfileserver.entity.TokenRequest;
 import localfileserver.kit.StringKit;
 import localfileserver.model.Result;
-import localfileserver.protobuf.TokenInfo;
 import localfileserver.server.kit.Encrypt;
 import localfileserver.server.manager.TokensManager;
 import localfileserver.server.request.TokenRequestManager;
@@ -120,7 +120,7 @@ public class ServerServiceImpl implements ServerService {
     }
 
     @Override
-    public Result addToResultQueue(String userName, String key, TokenInfo.Token token) {
+    public Result addToResultQueue(String userName, String key, TokenEntity token) {
         TokenRequest tokenRequest = new TokenRequest();
         tokenRequest.setUserName(userName);
         tokenRequest.setKey(key);

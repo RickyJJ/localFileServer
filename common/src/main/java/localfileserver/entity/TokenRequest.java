@@ -1,6 +1,5 @@
 package localfileserver.entity;
 
-import localfileserver.protobuf.TokenInfo;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -16,6 +15,6 @@ public class TokenRequest implements Serializable {
     private String ip;
     private String userName;
     private String key;
-    private TokenInfo.Token token;
+    private TokenEntity token;
     private String status;
 }

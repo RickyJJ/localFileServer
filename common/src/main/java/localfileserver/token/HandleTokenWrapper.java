@@ -15,6 +15,7 @@ public class HandleTokenWrapper implements HandleToken {
 
     protected TokenEntity token;
 
+    protected HandleTokenWrapper() { }
     protected HandleTokenWrapper(TokenInfo.Token token) {
         this.token = new TokenEntity();
         this.token.setType(token.getType());
@@ -34,6 +35,16 @@ public class HandleTokenWrapper implements HandleToken {
     @Override
     public String value() {
         return token.getValue();
+    }
+
+    /**
+     * get object of {@link TokenEntity}
+     *
+     * @return return token entity
+     */
+    @Override
+    public TokenEntity getToken() {
+        return token;
     }
 
     @Override

@@ -12,6 +12,10 @@ import java.time.Instant;
  */
 public class ExpireHandleTokenWrapper extends HandleTokenWrapper implements ExpiredHandleToken {
 
+    private ExpireHandleTokenWrapper() {
+        super();
+    }
+
     private ExpireHandleTokenWrapper(TokenInfo.Token token, Instant instant) {
         super(token);
         this.token.setExpireDate(instant);

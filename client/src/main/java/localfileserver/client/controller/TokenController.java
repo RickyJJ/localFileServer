@@ -5,6 +5,7 @@ import localfileserver.api.ServerService;
 import localfileserver.entity.TokenRequest;
 import localfileserver.model.Result;
 import localfileserver.protobuf.TokenInfo;
+import localfileserver.token.HandleTokenWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
@@ -75,7 +76,7 @@ public class TokenController extends BaseController {
             return serverService.rejectTokenApply(user, key);
         }
 
-        String name = TokenInfo.Token.TokenType.valueOf(tokenType).name();
+        String name = TokenInfo.Token.TokenType.forNumber(Integer.parseInt(tokenType)).name();
 
         log.info("Admin dispatch token [{}] to user [{}] with key[{}]", name, user, key);
 
@@ -93,7 +94,8 @@ public class TokenController extends BaseController {
             return result;
         }
 
-        result = serverService.addToResultQueue(user, key, (TokenInfo.Token) result.get("token"));
+        HandleTokenWrapper tokenWrapper = (HandleTokenWrapper) result.get("token");
+        result = serverService.addToResultQueue(user, key, tokenWrapper.getToken());
         if (result.isFailed()) {
             log.warn("get token in result queue failed. {}", result);
             serverService.changeStatusOfWaitingRequest(user, key, "failed");

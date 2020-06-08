@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
  * @author Mr.Jiong
  */
 @Slf4j
+@Component
 public class TokensManager {
     /**
      * store normal tokens

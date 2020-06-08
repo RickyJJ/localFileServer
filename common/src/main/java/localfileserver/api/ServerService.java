@@ -1,9 +1,9 @@
 package localfileserver.api;
 
 
+import localfileserver.entity.TokenEntity;
 import localfileserver.entity.TokenRequest;
 import localfileserver.model.Result;
-import localfileserver.protobuf.TokenInfo;
 
 import java.util.List;
 
@@ -57,7 +57,7 @@ public interface ServerService {
      * @param token token dispatched for the client
      * @return handle result
      */
-    Result addToResultQueue(String userName, String key, TokenInfo.Token token);
+    Result addToResultQueue(String userName, String key, TokenEntity token);
 
     /**
      * remove token request from result queue.
