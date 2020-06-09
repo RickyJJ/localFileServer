@@ -2,6 +2,7 @@ package localfileserver.client.entity;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import localfileserver.entity.TokenEntity;
 import localfileserver.protobuf.TokenInfo;
 import localfileserver.protobuf.UserInfo;
 import localfileserver.token.ExpireHandleTokenWrapper;
@@ -41,10 +42,11 @@ public class User {
     public void updateToken(String token) {
         log.info("Token to update: {}", token);
 
-        TokenInfo.Token tokenInstance = parseToken(token);
+        TokenInfo.Token protobufToken = parseToken(token);
+        TokenEntity tokenInstance = TokenEntity.toEntity(protobufToken);
         Assert.notNull(tokenInstance, "Parse Token failed");
 
-        UserInfo.User build = UserInfo.User.newBuilder().setToken(tokenInstance).setName(name).setId(id).build();
+        UserInfo.User build = UserInfo.User.newBuilder().setToken(protobufToken).setName(name).setId(id).build();
 
         try (OutputStream outputStream = new FileOutputStream(infoPath)) {
 

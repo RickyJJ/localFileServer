@@ -1,6 +1,7 @@
 package localfileserver.client.entity;
 
 import localfileserver.client.config.DirectoryProperties;
+import localfileserver.entity.TokenEntity;
 import localfileserver.kit.TokenKit;
 import localfileserver.protobuf.TokenInfo;
 import localfileserver.protobuf.UserInfo;
@@ -86,11 +87,15 @@ public class UserFactory {
 
     private static HandleToken readToken(UserInfo.User userProto) {
         TokenInfo.Token token = userProto.getToken();
+        TokenEntity tokenEntity = TokenEntity.toEntity(token);
         TokenInfo.Token.TokenType type = token.getType();
+
         if (type == TokenInfo.Token.TokenType.FOREVER) {
-            return HandleTokenWrapper.toHandleToken(token);
+            return HandleTokenWrapper.toHandleToken(tokenEntity);
+
         } else if (type == TokenInfo.Token.TokenType.TEMP) {
-            return ExpireHandleTokenWrapper.toHandleToken(token);
+            return ExpireHandleTokenWrapper.toHandleToken(tokenEntity);
+
         } else {
             throw new IllegalArgumentException("Unknown token type.");
         }

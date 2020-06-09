@@ -1,6 +1,7 @@
 package localfileserver.token;
 
 import com.google.common.base.MoreObjects;
+import localfileserver.entity.TokenEntity;
 import localfileserver.kit.DateKit;
 import localfileserver.kit.TokenKit;
 import localfileserver.protobuf.TokenInfo;
@@ -16,7 +17,7 @@ public class ExpireHandleTokenWrapper extends HandleTokenWrapper implements Expi
         super();
     }
 
-    private ExpireHandleTokenWrapper(TokenInfo.Token token, Instant instant) {
+    private ExpireHandleTokenWrapper(TokenEntity token, Instant instant) {
         super(token);
         this.token.setExpireDate(instant);
     }
@@ -38,10 +39,12 @@ public class ExpireHandleTokenWrapper extends HandleTokenWrapper implements Expi
         return token.getExpireDate();
     }
 
-    public static ExpiredHandleToken newInstance(TokenInfo.Token token, long deadTime) {
+    public static ExpiredHandleToken newInstance(TokenEntity token, long deadTime) {
         Instant instant = Instant.ofEpochMilli(deadTime);
         ExpireHandleTokenWrapper expireHandleTokenWrapper = new ExpireHandleTokenWrapper(token, instant);
+
         expireHandleTokenWrapper.token.setValue(TokenKit.newToken());
+
         return expireHandleTokenWrapper;
     }
 

@@ -1,6 +1,6 @@
 package localfileserver.server.manager;
 
-import com.google.common.base.Strings;
+import localfileserver.entity.TokenEntity;
 import localfileserver.kit.TokenKit;
 import localfileserver.protobuf.TokenInfo;
 import localfileserver.protobuf.TokenPool;
@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,7 +30,7 @@ import java.util.Optional;
 @Slf4j
 class TokenPageEntity {
 
-    private TokenPool.TokenPage page;
+    private List<TokenEntity> tokenEntities;
 
     private File tokenFile;
 
@@ -85,7 +86,6 @@ class TokenPageEntity {
             tokenFile = file;
             size = this.validCount = validCount;
             usedSize = 0;
-            page = tokenPage;
             Instant now = Instant.now();
             // 两分钟检测一次token page的被访问情况
             lastCheckTime = now.plusSeconds(120);
@@ -132,7 +132,13 @@ class TokenPageEntity {
             }
         }
         try (FileOutputStream outputStream = new FileOutputStream(tokenFile)) {
-            page.writeTo(outputStream);
+            TokenPool.TokenPage.Builder builder = TokenPool.TokenPage.newBuilder();
+            for (TokenEntity tokenEntity : tokenEntities) {
+                TokenInfo.Token token = tokenEntity.toProtobuf();
+                builder.addToken(token);
+            }
+
+            builder.build().writeTo(outputStream);
         } catch (IOException e) {
             log.error("write token to file failed", e);
         }
@@ -140,27 +146,29 @@ class TokenPageEntity {
 
     private void readTokenFromFile() {
         try (FileInputStream inputStream = new FileInputStream(tokenFile)) {
-            this.page = TokenPool.TokenPage.parseFrom(inputStream);
+            TokenPool.TokenPage tokenPage = TokenPool.TokenPage.parseFrom(inputStream);
 
-            List<TokenInfo.Token> tokenList = page.getTokenList();
-            this.size = tokenList.size();
-            this.validCount = (int) tokenList.stream().filter(TokenInfo.Token::getIsValid).count();
-            usedSize = (int) tokenList.stream().filter(token -> Strings.isNullOrEmpty(token.getValue())).count();
+            this.tokenEntities = new ArrayList<>();
+            tokenPage.getTokenList().forEach(token -> tokenEntities.add(TokenEntity.toEntity(token)));
+
+            this.size = this.tokenEntities.size();
+            this.validCount = (int) tokenEntities.stream().filter(TokenEntity::isValid).count();
+            usedSize = (int) tokenEntities.stream().filter(TokenEntity::isUsed).count();
         } catch (IOException e) {
             log.error("io error", e);
             throw new RuntimeException("cant read tokenPage data from file");
         }
     }
 
-    List<TokenInfo.Token> tokens() {
-        return page.getTokenList();
+    List<TokenEntity> tokens() {
+        return this.tokenEntities;
     }
 
-    boolean hasToken(TokenInfo.Token targetToken) {
+    boolean hasToken(TokenEntity targetToken) {
         if (targetToken == null) {
             return false;
         }
-        return page.getTokenList().stream().anyMatch(token -> token.getValue().equals(targetToken.getValue()));
+        return tokenEntities.stream().anyMatch(token -> token.getValue().equals(targetToken.getValue()));
     }
 
     boolean isTokenValid(TokenInfo.Token targetToken) {
@@ -168,15 +176,14 @@ class TokenPageEntity {
             return false;
         }
 
-        Optional<TokenInfo.Token> firstToken = page.getTokenList().stream().filter(token -> token.getValue().equals(targetToken.getValue())).findFirst();
+        Optional<TokenEntity> firstToken = tokenEntities.stream().filter(token -> token.getValue().equals(targetToken.getValue())).findFirst();
 
         if (firstToken.isPresent()) {
-            TokenInfo.Token token = firstToken.get();
+            TokenEntity token = firstToken.get();
             if (token.getType() == TokenInfo.Token.TokenType.FOREVER) {
                 return true;
             } else {
-                Instant instant = Instant.ofEpochMilli(token.getLastTime());
-                return Instant.now().isBefore(instant);
+                return Instant.now().isBefore(token.getExpireDate());
             }
         } else {
             return false;

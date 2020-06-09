@@ -1,6 +1,7 @@
 package localfileserver.server.manager;
 
 import com.google.common.base.Strings;
+import localfileserver.entity.TokenEntity;
 import localfileserver.protobuf.TokenInfo;
 import localfileserver.server.ServerApplication;
 import localfileserver.server.config.TokenManageConfig;
@@ -9,6 +10,7 @@ import localfileserver.token.ExpiredHandleToken;
 import localfileserver.token.HandleToken;
 import localfileserver.token.HandleTokenWrapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
@@ -139,11 +141,12 @@ public class TokensManager {
 
         ExpiredHandleToken expiredHandleToken;
         if (pageEntity.isPresent()) {
-            TokenInfo.Token availableToken = pageEntity.get().tokens().stream().
-                    filter(token -> !Strings.isNullOrEmpty(token.getValue()))
+            TokenPageEntity tokenPageEntity = pageEntity.get();
+            TokenEntity availableToken = tokenPageEntity.tokens().stream().
+                    filter(token -> Strings.isNullOrEmpty(token.getValue()))
                     .findFirst().get();
             // update date of page in queue
-            pageEntity.get().setLastCheckTime(Instant.now());
+            tokenPageEntity.setLastCheckTime(Instant.now());
             expiredHandleToken = ExpireHandleTokenWrapper.newInstance(availableToken, deadTime);
         } else {
             TokenPageEntity newExpireTokenPage = createExpireTokenPage();
@@ -166,7 +169,7 @@ public class TokensManager {
                 .findFirst();
 
         HandleToken handleToken;
-        TokenInfo.Token token;
+        TokenEntity token;
         if (availableTokenPage.isPresent()) {
             TokenPageEntity tokenPageEntity = availableTokenPage.get();
             token = tokenPageEntity.tokens().stream().filter(tokenItem -> Strings.isNullOrEmpty(tokenItem.getValue()))

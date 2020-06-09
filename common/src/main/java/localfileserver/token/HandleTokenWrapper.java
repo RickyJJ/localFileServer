@@ -3,9 +3,6 @@ package localfileserver.token;
 import com.google.common.base.MoreObjects;
 import localfileserver.entity.TokenEntity;
 import localfileserver.kit.TokenKit;
-import localfileserver.protobuf.TokenInfo;
-
-import java.time.Instant;
 
 /**
  * implement for HandleToken
@@ -16,17 +13,11 @@ public class HandleTokenWrapper implements HandleToken {
     protected TokenEntity token;
 
     protected HandleTokenWrapper() { }
-    protected HandleTokenWrapper(TokenInfo.Token token) {
-        this.token = new TokenEntity();
-        this.token.setType(token.getType());
-        this.token.setValue(token.getValue());
-
-        long lastTime = token.getLastTime();
-        this.token.setExpireDate(lastTime == 0 ? null : Instant.ofEpochMilli(lastTime));
-
+    protected HandleTokenWrapper(TokenEntity token) {
+        this.token = token;
     }
 
-    public static HandleToken newInstance(TokenInfo.Token token) {
+    public static HandleToken newInstance(TokenEntity token) {
         HandleTokenWrapper tokenWrapper = new HandleTokenWrapper(token);
         tokenWrapper.token.setValue(TokenKit.newToken());
         return tokenWrapper;
@@ -52,7 +43,7 @@ public class HandleTokenWrapper implements HandleToken {
         return token != null && token.isValid();
     }
 
-    public static HandleToken toHandleToken(TokenInfo.Token token) {
+    public static HandleToken toHandleToken(TokenEntity token) {
         return new HandleTokenWrapper(token);
     }
 
