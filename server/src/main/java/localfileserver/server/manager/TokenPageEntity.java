@@ -1,7 +1,6 @@
 package localfileserver.server.manager;
 
 import localfileserver.entity.TokenEntity;
-import localfileserver.kit.TokenKit;
 import localfileserver.protobuf.TokenInfo;
 import localfileserver.protobuf.TokenPool;
 import lombok.extern.slf4j.Slf4j;
@@ -67,17 +66,22 @@ class TokenPageEntity {
             }
         }
 
+        this.tokenEntities = new ArrayList<>();
+
         try (FileOutputStream outputStream = new FileOutputStream(file)) {
             TokenPool.TokenPage.Builder tokenPageBuilder = TokenPool.TokenPage.newBuilder();
 
             for (int i = 0; i < validCount; i++) {
                 TokenInfo.Token.Builder tokenBuilder = TokenInfo.Token.newBuilder();
                 // ignore set value when init
-                tokenBuilder.setValue(TokenKit.newToken());
+                tokenBuilder.setValue("");
                 tokenBuilder.setType(tokenType);
                 tokenBuilder.setIsValid(true);
 
-                tokenPageBuilder.addToken(tokenBuilder.build());
+                TokenInfo.Token token = tokenBuilder.build();
+
+                tokenPageBuilder.addToken(token);
+                this.tokenEntities.add(TokenEntity.toEntity(token));
             }
 
             TokenPool.TokenPage tokenPage = tokenPageBuilder.build();

@@ -177,9 +177,10 @@ public class TokensManager {
             tokenPageEntity.setLastCheckTime(Instant.now());
         } else {
             TokenPageEntity normalTokenPage = createNormalTokenPage();
-            TOKENS.put(normalTokenPage.getPageName(), normalTokenPage);
 
+            TOKENS.put(normalTokenPage.getPageName(), normalTokenPage);
             NORMAL_WAITING_PAGE_QUEUE.add(normalTokenPage);
+
             token = normalTokenPage.tokens().get(0);
         }
 

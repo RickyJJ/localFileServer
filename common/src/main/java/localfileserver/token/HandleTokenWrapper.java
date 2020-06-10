@@ -1,6 +1,7 @@
 package localfileserver.token;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Strings;
 import localfileserver.entity.TokenEntity;
 import localfileserver.kit.TokenKit;
 
@@ -40,7 +41,11 @@ public class HandleTokenWrapper implements HandleToken {
 
     @Override
     public boolean isAvailable() {
-        return token != null && token.isValid();
+        if (token == null) {
+            return false;
+        }
+
+        return !Strings.isNullOrEmpty(value()) && token.isValid();
     }
 
     public static HandleToken toHandleToken(TokenEntity token) {
@@ -51,8 +56,8 @@ public class HandleTokenWrapper implements HandleToken {
     public String toString() {
         MoreObjects.ToStringHelper toStringHelper = MoreObjects.toStringHelper(this.getClass())
                 .add("token", token.getValue())
-                .add("tokenType", "normal")
-                .add("isAvailable", "true");
+                .add("tokenType", token.getType().name())
+                .add("isAvailable", isAvailable());
 
         return toStringHelper.toString();
     }

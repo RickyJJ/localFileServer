@@ -29,8 +29,8 @@
             this.$http.get('userToken').then(function (response) {
                 if (response.body.flag == '1') {
                     this.hasToken = true;
-                    this.tokenType = response.body.tokenType;
-                    this.tokenExpireDate = response.body.tokenExpireDate;
+                    this.tokenType = response.body.data.tokenType;
+                    this.tokenExpireDate = response.body.data.tokenExpireDate;
                 }
             });
         },
@@ -45,13 +45,13 @@
                 });
             },
             testToken() {
-                this.$http.get('user/checkDownload').then(function (response) {
+                this.$http.get('token/check').then(function (response) {
                     if (response.body.flag == 1) {
 
                         this.tokenType = 1;
                         this.hasToken = true;
                     } else {
-                        alert('not has role');
+                        alert(response.body.message);
                     }
 
                 });

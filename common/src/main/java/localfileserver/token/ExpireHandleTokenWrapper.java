@@ -17,13 +17,12 @@ public class ExpireHandleTokenWrapper extends HandleTokenWrapper implements Expi
         super();
     }
 
-    private ExpireHandleTokenWrapper(TokenEntity token, Instant instant) {
-        super(token);
-        this.token.setExpireDate(instant);
-    }
-
     @Override
     public boolean isExpired() {
+        if (token.getExpireDate() == null) {
+            return false;
+        }
+
         if (token.getType() == TokenInfo.Token.TokenType.TEMP) {
             return token.getExpireDate().isAfter(Instant.now());
         }
@@ -39,11 +38,21 @@ public class ExpireHandleTokenWrapper extends HandleTokenWrapper implements Expi
         return token.getExpireDate();
     }
 
-    public static ExpiredHandleToken newInstance(TokenEntity token, long deadTime) {
-        Instant instant = Instant.ofEpochMilli(deadTime);
-        ExpireHandleTokenWrapper expireHandleTokenWrapper = new ExpireHandleTokenWrapper(token, instant);
+    public static ExpireHandleTokenWrapper toHandleToken(TokenEntity tokenEntity) {
+        ExpireHandleTokenWrapper expireHandleTokenWrapper = new ExpireHandleTokenWrapper();
 
-        expireHandleTokenWrapper.token.setValue(TokenKit.newToken());
+        expireHandleTokenWrapper.token = tokenEntity;
+        return expireHandleTokenWrapper;
+    }
+
+    public static ExpiredHandleToken newInstance(TokenEntity token, long deadTime) {
+        ExpireHandleTokenWrapper expireHandleTokenWrapper = new ExpireHandleTokenWrapper();
+
+        token.setExpireDate(Instant.ofEpochMilli(deadTime));
+        token.setType(TokenInfo.Token.TokenType.TEMP);
+        token.setValue(TokenKit.newToken());
+
+        expireHandleTokenWrapper.token = token;
 
         return expireHandleTokenWrapper;
     }
@@ -53,9 +62,9 @@ public class ExpireHandleTokenWrapper extends HandleTokenWrapper implements Expi
         Instant expireDate = getExpiredTime();
         MoreObjects.ToStringHelper toStringHelper = MoreObjects.toStringHelper(this.getClass())
                 .add("token", token.getValue())
-                .add("tokenType", "temporal")
+                .add("tokenType", token.getType().name())
                 .add("isAvailable", isExpired())
-                .add("expireDate", expireDate == null ? "null" : DateKit.timestamp(expireDate));
+                .add("expireDate", expireDate == null ? "" : DateKit.timestamp(expireDate));
         return toStringHelper.toString();
     }
 }

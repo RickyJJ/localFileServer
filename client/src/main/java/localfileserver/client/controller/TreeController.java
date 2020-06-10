@@ -1,5 +1,6 @@
 package localfileserver.client.controller;
 
+import com.google.common.base.Strings;
 import localfileserver.client.config.DirectoryProperties;
 import localfileserver.client.config.param.Dict;
 import localfileserver.client.entity.FileItem;
@@ -8,6 +9,7 @@ import localfileserver.client.service.ClientService;
 import localfileserver.client.service.FileListService;
 import localfileserver.client.service.impl.ClientServiceImpl;
 import localfileserver.common.AppConst;
+import localfileserver.entity.TokenEntity;
 import localfileserver.model.Result;
 import localfileserver.token.ExpiredHandleToken;
 import localfileserver.token.HandleToken;
@@ -172,7 +174,7 @@ public class TreeController extends BaseController {
             Result result = clientService.applyToken(currentUser);
             if (result.isOk()) {
                 log.info("Get token key.");
-                setSessionAttr("tokenKey", result.get(AppConst.TOKEN_APPLY_KEY));
+                setSessionAttr(Dict.Token.TOKEN_KEY, result.get(AppConst.TOKEN_APPLY_KEY));
             } else {
                 log.info("Token apply failed.");
             }
@@ -184,7 +186,7 @@ public class TreeController extends BaseController {
         } else {
             // ignore
             log.info("User has long-term token, don't need to applying for token");
-            return Result.ok();
+            return Result.fail("1006", "Already has forever token");
         }
     }
 
@@ -203,7 +205,7 @@ public class TreeController extends BaseController {
 
             if (result.isOk()) {
                 log.info("Got token.");
-                String token = (String) result.get("token");
+                TokenEntity token = (TokenEntity) result.get("token");
                 currentUser.updateToken(token);
             } else if ("wait".equals(result.getFlag())) {
                 log.info("token request is waiting, {}", result);
@@ -231,7 +233,8 @@ public class TreeController extends BaseController {
 
         if (token == null) {
             return Result.fail("1000", "No token");
-        } else if (!token.isAvailable()) {
+        } else if (Strings.isNullOrEmpty(token.value()) || !token.isAvailable()) {
+            log.warn("user token: {}", token);
             return Result.fail("1001", "No available token");
         }
 
