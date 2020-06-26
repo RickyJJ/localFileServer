@@ -38,11 +38,12 @@ public class UserFactory {
      */
     public static User load(String uniqueKey) {
         String userFile = TokenKit.encode(uniqueKey);
-        File file = new File(directoryProperties.getDir() + File.separator + userFile + USER_FILE_SUFFIX);
+        File file = new File(directoryProperties.getUserPath() + File.separator + userFile + USER_FILE_SUFFIX);
 
         boolean userNew = false;
         if (!file.exists()) {
             try {
+                file.getParentFile().mkdirs();
                 file.createNewFile();
             } catch (IOException e) {
                 try {
@@ -60,7 +61,7 @@ public class UserFactory {
 
         User user = new User();
         user.setName(uniqueKey);
-        user.setInfoPath(userFile);
+        user.setInfoPath(file.getAbsolutePath());
 
         if (!userNew) {
             try {

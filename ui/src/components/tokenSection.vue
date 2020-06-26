@@ -2,7 +2,6 @@
     <div v-show="isShow">
         <div v-show="!hasToken">
             No available Token <a v-on:click="applyToken">Click to Apply!</a>
-            <a v-on:click="testToken">Test token</a>
         </div>
         <div v-show="hasToken">{{token}}</div>
     </div>
@@ -38,22 +37,16 @@
             applyToken() {
                 this.$http.get('token/apply').then(function (response) {
                     if (response.body.flag == '1') {
+                        if (response.body.data.hasToken == '1') {
+                            this.tokenType = response.body.data.tokenType;
+                            this.tokenExpireDate = response.body.data.tokenExpireDate;
+                            this.hasToken = true;
+                            return;
+                        }
                         alert('apply succeed.');
                     } else {
                         alert(response.body.msg);
                     }
-                });
-            },
-            testToken() {
-                this.$http.get('token/check').then(function (response) {
-                    if (response.body.flag == 1) {
-
-                        this.tokenType = 1;
-                        this.hasToken = true;
-                    } else {
-                        alert(response.body.message);
-                    }
-
                 });
             }
         }

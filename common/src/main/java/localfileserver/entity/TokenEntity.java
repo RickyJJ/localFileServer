@@ -60,10 +60,14 @@ public class TokenEntity implements Serializable {
     }
 
     public TokenInfo.Token toProtobuf() {
-        return TokenInfo.Token.newBuilder()
+        TokenInfo.Token.Builder builder = TokenInfo.Token.newBuilder()
                 .setValue(value)
                 .setIsValid(isValid())
-                .setType(type)
-                .setLastTime(expireDate.toEpochMilli()).build();
+                .setType(type);
+
+        if (expireDate != null) {
+            builder.setLastTime(expireDate.toEpochMilli());
+        }
+        return builder.build();
     }
 }

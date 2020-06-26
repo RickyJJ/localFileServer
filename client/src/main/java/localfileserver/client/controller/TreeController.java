@@ -9,7 +9,7 @@ import localfileserver.client.service.ClientService;
 import localfileserver.client.service.FileListService;
 import localfileserver.client.service.impl.ClientServiceImpl;
 import localfileserver.common.AppConst;
-import localfileserver.entity.TokenEntity;
+import localfileserver.kit.DateKit;
 import localfileserver.model.Result;
 import localfileserver.token.ExpiredHandleToken;
 import localfileserver.token.HandleToken;
@@ -74,26 +74,28 @@ public class TreeController extends BaseController {
 
 
     @RequestMapping("/files/**")
-    public String goDir(HttpServletRequest request) {
+    public Result goDir(HttpServletRequest request) {
         String requestURI = request.getRequestURI();
 
-        String dirPath = requestURI.substring("/files/".length());
+        String prePath = "/files/";
+        String dirPath = requestURI.substring(requestURI.indexOf(prePath) + prePath.length());
         if (StringUtils.isEmpty(dirPath)) {
             log.warn("dir path is empty, use default");
-            return redirectTo("/");
+            return Result.fail("Directory path is empty");
         }
 
         String newDirPath = fileListService.newDirPath(dirPath);
         if (newDirPath.length() == 0) {
-            redirectTo("/");
+            return Result.fail("Wrong path", "Directory path is wrong");
         }
 
+        Result result = Result.ok();
         List<FileItem> fileItems = fileListService.listFiles(directoryProperties.getDir() + File.separator + newDirPath, FileListService.DESCEND);
-        setAttr("files", fileItems);
+        result.add("files", fileItems);
 
-        setAttr("parentPath", fileListService.getParentPath(newDirPath));
-        setAttr("isRoot", Boolean.FALSE);
-        return "main";
+        result.add("parentPath", fileListService.getParentPath(newDirPath));
+        result.add("isRoot", Boolean.FALSE);
+        return result;
     }
 
     @RequestMapping(value = "/fileUpload", method = RequestMethod.POST)
@@ -127,7 +129,9 @@ public class TreeController extends BaseController {
     @RequestMapping("/download/**")
     @CrossOrigin
     public Object downloadFile(HttpServletRequest request) throws UnsupportedEncodingException {
-        String filePath = request.getRequestURI().substring("/download/".length());
+        String uri = request.getRequestURI();
+        String preDownloadUrl = "/download/";
+        String filePath = uri.substring(uri.indexOf(preDownloadUrl) + preDownloadUrl.length());
         filePath = URLDecoder.decode(filePath, "UTF-8");
 
         log.debug("Download Uri: {}", filePath);
@@ -165,6 +169,14 @@ public class TreeController extends BaseController {
     public Result userApplyToken() {
         User currentUser = getCurrentUser();
 
+        String tokenKey = (String) getSessionAttr(Dict.Token.TOKEN_KEY);
+        if (tokenKey != null) {
+            Result result = clientService.userCheckAndFetchToken(currentUser, tokenKey);
+            result.add("hasToken", result.isOk() ? "1" : "0");
+
+            return result;
+        }
+
         HandleToken userToken = currentUser.getToken();
         log.info("ready for applying token for user: {}", currentUser.getName());
 
@@ -191,37 +203,6 @@ public class TreeController extends BaseController {
     }
 
     /**
-     * 检验用户是否申请token的key，如果有则尝试从远程服务获取token
-     */
-    @RequestMapping("/token/check")
-    public Result userCheckAndFetchToken() {
-        User currentUser = getCurrentUser();
-
-        String tokenKey = (String) getSessionAttr(Dict.Token.TOKEN_KEY);
-        if (tokenKey == null) {
-            return Result.fail("There is no key to fetch token.");
-        } else {
-            Result result = clientService.fetchToken(currentUser, tokenKey);
-
-            if (result.isOk()) {
-                log.info("Got token.");
-                TokenEntity token = (TokenEntity) result.get("token");
-                currentUser.updateToken(token);
-            } else if ("wait".equals(result.getFlag())) {
-                log.info("token request is waiting, {}", result);
-                return Result.fail("Token request is waiting.");
-            } else {
-                log.warn("Fetching token failed. code: {}, msg: {}", result.getFlag(), result.getMessage());
-            }
-
-            setSessionAttr(Dict.Token.TOKEN_KEY, null);
-
-            return result;
-        }
-
-    }
-
-    /**
      * 获取用户token值
      * 如果有可用token，则更新用户权限，允许下载文件，否则不允许
      * @return result
@@ -239,7 +220,7 @@ public class TreeController extends BaseController {
         }
 
         Result result = Result.ok();
-        String tokenExpireDate = token.isTemporal() ? ((ExpiredHandleToken) token).getExpiredTime().toString() : "长期";
+        String tokenExpireDate = token.isTemporal() ? DateKit.timestamp(((ExpiredHandleToken) token).getExpiredTime()) : "长期";
 
         result.add("tokenExpireDate", tokenExpireDate);
         result.add("tokenType", token.isTemporal() ? "2" : "1");

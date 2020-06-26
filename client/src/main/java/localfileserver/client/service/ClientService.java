@@ -18,6 +18,14 @@ public interface ClientService {
     Result applyToken(User user);
 
     /**
+     * 检验用户是否申请token的key，如果有则尝试从远程服务获取token
+     * @param user current user
+     * @param tokenKey token key for applying token
+     * @return handle result
+     */
+    Result userCheckAndFetchToken(User user, String tokenKey);
+
+    /**
      * if client's apply for token is successful and
      * then can fetch token back.
      * @param user client
