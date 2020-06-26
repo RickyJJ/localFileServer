@@ -98,6 +98,7 @@
                 <directory>src/main/resources</directory>
                 <includes>
                     <include>static/*</include>
+                    <include>asserts/*</include>
                     <include>templates/*</include>
                     <include>*.txt</include>
                 </includes>
