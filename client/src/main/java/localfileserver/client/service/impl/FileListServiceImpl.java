@@ -79,6 +79,10 @@ public class FileListServiceImpl implements FileListService {
             return false;
         }
 
+        if (dirPath.startsWith("/")) {
+            dirPath = dirPath.substring(1);
+        }
+
         String filePath = directoryProperties.getDir() + File.separatorChar + dirPath;
         log.debug("Validate file path: {}", filePath);
 

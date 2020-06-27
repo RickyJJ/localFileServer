@@ -151,7 +151,8 @@ public class TokensManager {
         } else {
             TokenPageEntity newExpireTokenPage = createExpireTokenPage();
             EXPIRED_TOKENS.put(newExpireTokenPage.getPageName(), newExpireTokenPage);
-            EXPIRE_WAITING_PAGE_QUEUE.add(newExpireTokenPage);
+            EXPIRE_WAITING_PAGE_QUEUE.addLast(newExpireTokenPage);
+            log.info("added to normal waiting queue");
             expiredHandleToken = ExpireHandleTokenWrapper.newInstance(newExpireTokenPage.tokens().get(0), deadTime);
         }
 
@@ -177,9 +178,9 @@ public class TokensManager {
             tokenPageEntity.setLastCheckTime(Instant.now());
         } else {
             TokenPageEntity normalTokenPage = createNormalTokenPage();
-
             TOKENS.put(normalTokenPage.getPageName(), normalTokenPage);
             NORMAL_WAITING_PAGE_QUEUE.add(normalTokenPage);
+            log.info("added to normal waiting queue");
 
             token = normalTokenPage.tokens().get(0);
         }
@@ -212,8 +213,8 @@ public class TokensManager {
         log.info("valid expireTokens count: {}", temporalCount);
 
         List<Thread> tasks = new ArrayList<>();
-        tasks.add(new TokenQueryLoopTask(NORMAL_WAITING_PAGE_QUEUE, 60));
-        tasks.add(new TokenQueryLoopTask(EXPIRE_WAITING_PAGE_QUEUE, 30));
+        tasks.add(new TokenQueryLoopTask("normal wait queue", NORMAL_WAITING_PAGE_QUEUE, 60));
+        tasks.add(new TokenQueryLoopTask("expire wait queue", EXPIRE_WAITING_PAGE_QUEUE, 30));
 
         tasks.forEach(Thread::start);
     }

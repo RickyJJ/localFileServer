@@ -12,4 +12,8 @@ public class Dict {
     public static class Token {
         public static final String TOKEN_KEY = "token_key";
     }
+
+    public static class User {
+        public static final String UPDATED_FLAG = "_user_updated_flag";
+    }
 }

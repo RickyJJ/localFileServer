@@ -68,13 +68,17 @@ public class UserFactory {
                 FileInputStream inputStream = new FileInputStream(file);
                 UserInfo.User userProto = UserInfo.User.parseFrom(inputStream);
 
+                inputStream.close();
+
                 final String id = userProto.getId();
                 if (!uniqueKey.equals(id)) {
                     log.error("request unique key: {}, user id: {}", uniqueKey, id);
                     throw new IllegalArgumentException("User key identify failed");
                 }
 
-                user.setToken(readToken(userProto));
+                HandleToken token = readToken(userProto);
+                user.setToken(token);
+                user.updateUserRole(token.getToken());
             } catch (IOException e) {
                 // ignore
             }
@@ -82,6 +86,7 @@ public class UserFactory {
             // ignore
             final UserInfo.User newUserProto = createNewUserProto(file, uniqueKey);
 
+            user.updateUserRole(null);
         }
         return user;
     }

@@ -8,6 +8,9 @@ import localfileserver.token.HandleToken;
 import localfileserver.token.HandleTokenWrapper;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.Assert;
 
 import java.io.FileOutputStream;
@@ -51,8 +54,25 @@ public class User {
             this.token = tokenEntity.getType() == TokenInfo.Token.TokenType.FOREVER ?
                     HandleTokenWrapper.toHandleToken(tokenEntity) :
                     ExpireHandleTokenWrapper.toHandleToken(tokenEntity);
+
+            updateUserRole(tokenEntity);
+
         } catch (IOException e) {
             log.warn("User info update failed", e);
         }
+    }
+
+    public void updateUserRole(TokenEntity tokenEntity) {
+        UsernamePasswordAuthenticationToken oldUserToken = (UsernamePasswordAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+        UsernamePasswordAuthenticationToken userToken;
+        if (tokenEntity != null && tokenEntity.isValid()) {
+
+            userToken = new UsernamePasswordAuthenticationToken(oldUserToken.getName(), oldUserToken.getCredentials(), AuthorityUtils.createAuthorityList("download"));
+
+        } else {
+            userToken = new UsernamePasswordAuthenticationToken(oldUserToken.getName(), oldUserToken.getCredentials(), AuthorityUtils.createAuthorityList("guest"));
+
+        }
+        SecurityContextHolder.getContext().setAuthentication(userToken);
     }
 }

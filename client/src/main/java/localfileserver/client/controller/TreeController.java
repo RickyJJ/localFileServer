@@ -5,6 +5,7 @@ import localfileserver.client.config.DirectoryProperties;
 import localfileserver.client.config.param.Dict;
 import localfileserver.client.entity.FileItem;
 import localfileserver.client.entity.User;
+import localfileserver.client.kit.SessionKit;
 import localfileserver.client.service.ClientService;
 import localfileserver.client.service.FileListService;
 import localfileserver.client.service.impl.ClientServiceImpl;
@@ -17,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -77,11 +79,11 @@ public class TreeController extends BaseController {
     public Result goDir(HttpServletRequest request) {
         String requestURI = request.getRequestURI();
 
-        String prePath = "/files/";
+        String prePath = "/files";
         String dirPath = requestURI.substring(requestURI.indexOf(prePath) + prePath.length());
         if (StringUtils.isEmpty(dirPath)) {
             log.warn("dir path is empty, use default");
-            return Result.fail("Directory path is empty");
+            dirPath = "/";
         }
 
         String newDirPath = fileListService.newDirPath(dirPath);
@@ -126,8 +128,19 @@ public class TreeController extends BaseController {
         return redirectTo("/");
     }
 
+    @GetMapping("/preDownload")
+    public Result checkBeforeDownload() {
+        User currentUser = getCurrentUser();
+
+        if (currentUser.getToken() != null && currentUser.getToken().isAvailable()) {
+            return Result.ok();
+        }
+
+        return Result.fail("Download denied, needed for a token.");
+    }
+
     @RequestMapping("/download/**")
-    @CrossOrigin
+    @PreAuthorize("hasAuthority('download')")
     public Object downloadFile(HttpServletRequest request) throws UnsupportedEncodingException {
         String uri = request.getRequestURI();
         String preDownloadUrl = "/download/";
@@ -174,6 +187,8 @@ public class TreeController extends BaseController {
             Result result = clientService.userCheckAndFetchToken(currentUser, tokenKey);
             result.add("hasToken", result.isOk() ? "1" : "0");
 
+            // ready to update user token info
+            SessionKit.getSession().setAttribute(Dict.User.UPDATED_FLAG, "1");
             return result;
         }
 

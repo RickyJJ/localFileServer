@@ -64,7 +64,14 @@
                         vm.parentPath = response.body.data.parentPath;
                     });
                 } else if (filePath.indexOf("download/") == 0) {
-                    window.location.href = this.CONTEXT.path(filePath);
+                    this.$http.get("preDownload").then(function (response) {
+                        if (response.body.flag == '1') {
+                            window.location.href = this.CONTEXT.path(filePath);
+                        } else {
+                            alert(response.body.message);
+                        }
+
+                    });
                 }
             }
         },

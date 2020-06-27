@@ -1,5 +1,6 @@
 package localfileserver.client.config.auth;
 
+import localfileserver.client.config.param.Dict;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationTrustResolver;
 import org.springframework.security.authentication.AuthenticationTrustResolverImpl;
@@ -64,9 +65,16 @@ public class CustomSecurityFilter extends AbstractAuthenticationProcessingFilter
         SecurityContext context = SecurityContextHolder.getContext();
         Authentication authentication = context.getAuthentication();
 
+        // 用户token信息更新后需要重新加载detail信息
+        boolean userNeedUpdate = request.getSession().getAttribute(Dict.User.UPDATED_FLAG) != null;
+        if (userNeedUpdate) {
+            authentication = null;
+            request.getSession().removeAttribute(Dict.User.UPDATED_FLAG);
+        }
+
         if (authentication == null || trustResolver.isAnonymous(authentication)) {
             SecurityContext emptyContext = SecurityContextHolder.createEmptyContext();
-            UsernamePasswordAuthenticationToken user = new UsernamePasswordAuthenticationToken("guest", "2", AuthorityUtils.NO_AUTHORITIES);
+            UsernamePasswordAuthenticationToken user = new UsernamePasswordAuthenticationToken(request.getRemoteAddr(), "2", AuthorityUtils.NO_AUTHORITIES);
             user.setDetails(null);
             emptyContext.setAuthentication(user);
             // 设置context，防止AnonymousAuthenticationFilter生效

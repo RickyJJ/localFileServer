@@ -50,6 +50,12 @@ public class TokensManagerTest extends BaseTest {
     }
 
     @Test
+    public void testTokenPage() throws InterruptedException {
+        HandleToken handleToken = TokensManager.newToken(true);
+        Thread.sleep(10 * 1000);
+    }
+
+    @Test
     public void init() {
         TokensManager.init();
 
