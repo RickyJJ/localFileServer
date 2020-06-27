@@ -1,5 +1,5 @@
 <template>
-    <div v-show="isShow">
+    <div v-show="isShow" class="token-section">
         <div v-show="!hasToken">
             No available Token <a v-on:click="applyToken">Click to Apply!</a>
         </div>
@@ -20,8 +20,8 @@
         },
         computed: {
             token: function () {
-                if (this.tokenType == '1') return '长期';
-                else return '有效期至' + this.tokenExpireDate;
+                if (this.tokenType == '1') return 'TOKEN: FOREVER';
+                else return 'TOKEN DEAD-TIME: ' + this.tokenExpireDate;
             }
         },
         created() {
@@ -54,5 +54,11 @@
 </script>
 
 <style scoped>
-
+    .token-section {
+        margin-left: 1rem;
+        display: inline-block;
+        border: 1px solid #844f4f;
+        border-radius: 8px;
+        padding: 5px 8px;
+    }
 </style>

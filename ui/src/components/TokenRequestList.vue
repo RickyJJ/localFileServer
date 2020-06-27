@@ -6,9 +6,9 @@
                 <span>{{item.ip}}</span>
             </div>
             <div class="token-request-handle" v-if="item.status == '0'">
-                <a class="token-handle-btn" v-on:click="approveToken('1', item, index)">长期</a>
-                <a class="token-handle-btn" v-on:click="approveToken('0', item, index)">短期</a>
-                <a class="token-handle-btn" v-on:click="approveToken('2', item, index)">拒绝</a></div>
+                <a class="token-handle-btn" v-on:click="approveToken('1', item, index)">Forever</a>
+                <a class="token-handle-btn" v-on:click="approveToken('0', item, index)">Temporal</a>
+                <a class="token-handle-btn" v-on:click="approveToken('2', item, index)">Reject</a></div>
         </div>
     </div>
 </template>
@@ -47,13 +47,12 @@
 
     .token-request-item {
         border: 1px solid #effffe;
-        box-shadow: #469ef8 1px 1px 16px 8px;
+        box-shadow: #4f2b33 0 5px 40px 8px;
         border-radius: 8px;
         padding: 0 16px;
     }
 
     .token-request-title {
-        width: 80%;
         display: inline-block;
     }
 
@@ -67,5 +66,9 @@
         color: #595959;
         cursor: pointer;
         margin: 0 4px;
+    }
+
+    .token-handle-btn:hover {
+        text-decoration: underline #494949;
     }
 </style>

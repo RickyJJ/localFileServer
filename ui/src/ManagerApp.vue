@@ -26,7 +26,7 @@
     }
 
     .bg {
-        background-color: #b7ffd9;
+        background-color: #fbffd4;
     }
 
     .title {

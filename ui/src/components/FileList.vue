@@ -1,10 +1,14 @@
 <template>
     <div class="mainContainer">
         <ul class="fileTree">
-            <li v-if="!isRoot"><a href="javascript:void(0)" @click="getFileList('files/' + parentPath)">..</a></li>
+            <li v-if="!isRoot">
+                <span class="file-icon" v-bind:style="{transform: 'rotate(240deg)', backgroundImage: imgUrl('')}"></span>
+                <a href="javascript:void(0)" class="file-link"
+                                  @click="getFileList('files/' + parentPath)">..</a></li>
             <li v-for="file of files" :key="file.name">
-                <span class="file-icon" v-bind:style="{backgroundImage: imgUrl('static/icons/icon-file.png')}"></span>
-                <a href="javascript:void(0)" @click="getFileList(fileHref(file))">{{file.name}}{{file.dir ? '&nbsp;->'
+                <span class="file-icon" v-bind:style="{backgroundImage: imgUrl(file.name, file.dir)}"></span>
+                <a href="javascript:void(0)" class="file-link" @click="getFileList(fileHref(file))">{{file.name}}{{file.dir
+                    ? '&nbsp;->'
                     : ''}}</a>
                 <div style="display: inline-block; float: right">
                     <span class="fileSize">{{file.size}}</span>
@@ -29,8 +33,26 @@
             fileHref: function (file) {
                 return file.dir ? ('files/' + file.path) : ('download/' + file.path)
             },
-            imgUrl: function(imgPath) {
-                return 'url(' + this.CONTEXT.path(imgPath) + ')';
+            imgUrl: function (imgName, isDir) {
+                var icon
+                if (isDir) {
+                    icon = "icons/icon-dir.png";
+                } else if (imgName == '') {
+                    icon = "icons/icon-to-parent.png";
+                } else {
+                    var namesSplits = imgName.split('.')
+                    var suffix = namesSplits[namesSplits.length - 1];
+                    icon = this.isSupportFileType(suffix) ? this.getIcon(suffix) : this.getIcon('file');
+                }
+                return 'url(' + this.CONTEXT.path('static/' + icon) + ')';
+            },
+
+            isSupportFileType(suffix) {
+                var supportedFileType = "7Z,BAT,BIN,CONF,CSS,DATA,DIR,DOC,DOCX,EXE,FILE,HTML,ICO,INI,JAVA,JPEG,JPG,PDF,PNG,PPT,PSD,PY,RAR,SH,SVG,TAR,TTF,TXT,XLSX,XML,YML,ZIP";
+                return supportedFileType.indexOf(suffix.toUpperCase()) > -1
+            },
+            getIcon(suffix) {
+                return "icons/icon-" + suffix + '.png';
             },
             getFileList(filePath) {
                 let vm = this;
@@ -71,6 +93,11 @@
         padding: 4px;
     }
 
+    .file-link {
+        color: #494949;
+        margin-left: 0.5rem;
+    }
+
     .fileSize {
     }
 
@@ -85,5 +112,6 @@
         background-position: center;
         background-size: contain;
         background-repeat: no-repeat;
+        vertical-align: bottom;
     }
 </style>
