@@ -26,7 +26,6 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-//@PreAuthorize("admin")
 public class TokenController extends BaseController {
 
     @Reference
@@ -40,9 +39,8 @@ public class TokenController extends BaseController {
      * @return page
      */
     @RequestMapping("/token/manager")
-//    @PreAuthorize("admin")
     public String managerToken(HttpServletRequest request) {
-        return "tokensManager";
+        return "manager";
     }
 
     @GetMapping("tokenRequests")

@@ -7,7 +7,6 @@ import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.core.env.PropertiesPropertySource;
 import org.springframework.core.env.PropertySource;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.EncodedResource;
 import org.springframework.core.io.support.PropertySourceFactory;
@@ -44,10 +43,12 @@ public class MyPropertiesSourceFactory implements PropertySourceFactory {
         Resource classPathResource = new ClassPathResource(PRE_PATH + filename);
         if (!classPathResource.exists()) {
             log.debug("use parent path to load config files.");
-            classPathResource = new FileSystemResource(PRE_PARENT_PATH + filename);
+            classPathResource = new ClassPathResource(PRE_PARENT_PATH + filename);
+
+//            classPathResource = new ClassPathResource(PRE_PARENT_PATH + filename);;
         }
 
-        log.info("file exist: {}, path: {}", classPathResource.exists(), classPathResource.getFile().getPath());
+        log.info("file exist: {}, path: {}", classPathResource.exists(), classPathResource.getURI());
 
         if (Arrays.stream(YAML_SUFFIX).anyMatch(filename::endsWith)) {
             YamlPropertiesFactoryBean yamlPropertySource = new YamlPropertiesFactoryBean();

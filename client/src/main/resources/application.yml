@@ -3,7 +3,7 @@ dubbo:
   application:
     name: client
   registry:
-    address: 111.229.29.192:2181
+    address: 127.0.0.1:2181
     protocol: zookeeper
     check: false
     timeout: 10000
@@ -25,3 +25,5 @@ server:
     context-path: /client
   port: 8081
 debug: true
+
+  {"2181/tcp":[{"HostIp":"","HostPort":"2181"}],"8081/tcp":[{"HostIp":"","HostPort":"8081"}]

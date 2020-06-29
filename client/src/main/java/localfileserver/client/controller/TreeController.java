@@ -22,6 +22,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
@@ -57,8 +58,8 @@ public class TreeController extends BaseController {
     }
 
     @RequestMapping("/")
-    public String goTreePage() {
-        return redirectTo("/files");
+    public ModelAndView goTreePage() {
+        return new ModelAndView("client");
     }
 
     @GetMapping("/files")

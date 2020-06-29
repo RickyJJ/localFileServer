@@ -59,6 +59,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>2.2.2.RELEASE</version>
                 <configuration>
+                    <classifier>exec</classifier>
                     <mainClass>org.jiong.filetree.AppBoot</mainClass>
                     <skip>true</skip>
                 </configuration>
@@ -100,6 +101,8 @@
                     <include>static/*</include>
                     <include>asserts/*</include>
                     <include>templates/*</include>
+<!--                    <include>css/*</include>-->
+<!--                    <include>js/*</include>-->
                     <include>*.txt</include>
                 </includes>
                 <filtering>false</filtering>

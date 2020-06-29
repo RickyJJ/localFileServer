@@ -3,7 +3,7 @@ dubbo:
     name: server
     qos-port: 24222
   registry:
-    address: 111.229.29.192:2181
+    address: 127.0.0.1:2181
     protocol: zookeeper
     timeout: 10000
   provider:

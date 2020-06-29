@@ -1,5 +1,6 @@
 module.exports = {
     outputDir: "dst",
+    publicPath: "./",
     pages: {
         client: {
             entry: "src/main.js",
@@ -13,5 +14,6 @@ module.exports = {
             filename: "manager.html",
             title: "Manager Page"
         }
-    }
+    },
+    filenameHashing: false
 }

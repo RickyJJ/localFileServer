@@ -22,13 +22,15 @@ public class WebMvcConfig extends WebMvcConfigurationSupport {
     @Override
     protected void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/static/**").addResourceLocations("classpath:/asserts/");
+        registry.addResourceHandler("/css/**").addResourceLocations("classpath:/css/");
+        registry.addResourceHandler("/js/**").addResourceLocations("classpath:/js/");
     }
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
 
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:8080","http://192.168.0.100:8080")
+                .allowedOrigins("http://localhost:8080","http://192.168.0.100:8080", "http://www.jiong-story.online:8081")
                 .allowCredentials(true).maxAge(3600);
     }
 
